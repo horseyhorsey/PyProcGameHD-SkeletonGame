@@ -21,7 +21,7 @@ from . import BasicGame
 from . import Player
 from .advancedmode import AdvancedMode
 from ..dmd import HDDisplayController, font_named, sdl2_DisplayManager
-from ..dmd.layers import SolidLayer, GroupedLayer
+from ..dmd.layers import SolidLayer, GroupedLayer, ScriptlessLayer
 from ..modes import ScoreDisplay, ScoreDisplayHD
 from ..modes import Trough, ballsave, BallSearch
 from ..modes import osc
@@ -452,6 +452,17 @@ class SkeletonGame(BasicGame):
         """
 
         return self.dmdHelper.genMsgFrame(msg, background_layer, font_style, font_key, opaque)
+
+    def generateScriptlessTextLayer(self,msg=[],font_key='med',font_style=None, duration=1.5,opaque=False,width=128,height=32):
+        """Returns a "ScriptlessLayer" of text layers from a list of strings.
+        """         
+        scriptLayer = ScriptlessLayer(width,height)
+        for index, text in enumerate(msg):
+            layer = self.generateLayer(text,font_style=font_style,font_key=font_key,opaque=opaque)
+            scriptLayer.append(layer,duration)
+        scriptLayer.append(None,10)
+
+        return scriptLayer         
 
     def ball_saver_enable(self, num_balls_to_save=1, time=5, now=True, allow_multiple_saves=False, callback=None):
         import warnings

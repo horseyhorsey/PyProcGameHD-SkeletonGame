@@ -1201,14 +1201,23 @@ class SkeletonGame(BasicGame):
 
         # ball time is handled in ball drained callback
 
+        # set total time played for each player available
+        totalTimePlayed = 0
+
         # Also handle game stats.
         for i in range(0,len(self.players)):
             game_time = self.get_game_time(i)
+            totalTimePlayed += game_time            
             self.game_data['Audits']['Avg Game Time'] = self.calc_time_average_string( self.game_data['Audits']['Games Played'], self.game_data['Audits']['Avg Game Time'], game_time)
             self.game_data['Audits']['Avg Score'] = self.calc_number_average(self.game_data['Audits']['Games Played'], self.game_data['Audits']['Avg Score'], self.players[i].score)
             self.game_data['Audits']['Games Played'] += 1
 
             self.logger.info("Skel: 'player %d score %d" % (i, self.players[i].score))
+
+        # Increment the total time game played
+        self.logger.info("Skel: Total Game Time: " + str(totalTimePlayed))
+        totalTimePlayedStr = self.get_total_time_played_string(self.game_data['Audits']['Total Game Time'], totalTimePlayed)
+        self.game_data['Audits']['Total Game Time'] = totalTimePlayedStr
 
         self.save_game_data('game_user_data.yaml')
 

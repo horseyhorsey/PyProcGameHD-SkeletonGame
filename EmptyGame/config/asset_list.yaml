@@ -33,6 +33,10 @@ Fonts:
     line_width: 1
     line_color: [20,20,20]
     # anything else defined is for your own personal use
+  - key: score_font_style
+    interior_color: [255, 255, 128]
+    line_width: 1
+    line_color: [128, 128, 0]
   - key: blueish
     interior_color: [0,0,255]
     line_width: 1

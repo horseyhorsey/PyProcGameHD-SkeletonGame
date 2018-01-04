@@ -55,6 +55,10 @@ Fonts:
     interior_color: [200,20,20]
     line_width: 1
     line_color: [20,20,20]
+  - key: score_font_style
+    interior_color: [255, 255, 128]
+    line_width: 1
+    line_color: [128, 128, 0]
   - key: weird
     interior_color:
       - 0

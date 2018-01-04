@@ -17,6 +17,7 @@ class Attract(Mode):
         self.sound_keys = []
         self.sound_num = 0
         self.start_button_lamp = start_button_lamp
+        self.last_sound_key = None
 
         sl = dmd.ScriptlessLayer(self.game.dmd.width,self.game.dmd.height)
 
@@ -74,10 +75,12 @@ class Attract(Mode):
         pass
 
     def sw_flipperLwL_active_for_50ms(self, sw):
+        self.stop_sounds()
         self.layer.force_next(False)
         return False
 
     def sw_flipperLwR_active_for_50ms(self, sw):
+        self.stop_sounds()
         self.layer.force_next(True)
         return False
 
@@ -112,6 +115,8 @@ class Attract(Mode):
 
         self.game.log("Attract: Playing next sound: %s" % sound_key)
 
+        self.last_sound_key = sound_key
+
         if(sound_key in self.game.sound.music):
             if(self.game.user_settings['Machine (Standard)']['Attract Mode Music']=='On'):
                 self.game.sound.play_music(sound_key)
@@ -125,9 +130,11 @@ class Attract(Mode):
             stop the last song, if still playing """
 
         # self.game.log("Attract: stopping audio")
-        self.game.sound.fadeout_music() # stop old music if music is already playing
-        # would be wise to stop previous sound, too
-        # self.game.sound.stop(last_sound_key) # what _is_ the last sound key..?
+        self.game.sound.stop_music() # stop old music if music is already playing, Note
+
+        # stop the playing sound if it was set
+        if self.last_sound_key is not None:
+            self.game.sound.stop(self.last_sound_key)
 
     def mode_started(self):
         self.reset()
@@ -138,5 +145,5 @@ class Attract(Mode):
     def mode_stopped(self):
         self.game.lampctrl.stop_show()
         self.game.disableAllLamps()
-        self.game.sound.fadeout_music()
+        self.stop_sounds()
         pass

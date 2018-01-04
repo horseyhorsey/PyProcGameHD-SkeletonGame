@@ -1328,6 +1328,12 @@ class SkeletonGame(BasicGame):
             self.p = self.current_player()
             self.p.awardBonus(name,quantity, value)
 
+    def format_score(self, score):
+        """ Returns the score as a string formatted with commas """
+        if type(score) is str:
+            score = int(score)
+        return "{:,}".format(score)
+
     def run_loop(self, min_seconds_per_cycle=None):
         #sdl2_DisplayManager.inst().show_window(True)
         super(SkeletonGame, self).run_loop(min_seconds_per_cycle)

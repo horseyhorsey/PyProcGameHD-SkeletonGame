@@ -154,7 +154,7 @@ class BaseGameMode(procgame.game.AdvancedMode):
             self.game.lamps.standupMidR.disable()
 
         # here's an example of using an array (list) of lamps
-        # defined in the game (look at T2Game's __init__ method)
+        # defined in the game (look at the Games's __init__ method)
         # and an array of player states to make quick work of syncing
         # several lamps to target states:
         leftTargetStates = self.game.getPlayerState('leftTargets')

@@ -26,7 +26,7 @@ curr_file_path = os.path.dirname(os.path.abspath( __file__ ))
 logging.getLogger('game.driver').setLevel(logging.INFO)
 logging.getLogger('game.vdriver').setLevel(logging.INFO)
 
-class MyGame(SkeletonGame):
+class Game(SkeletonGame):
 
     # constructor for the game object; called once
     def __init__(self):
@@ -39,7 +39,7 @@ class MyGame(SkeletonGame):
 
         # call the super class which makes the game and specify where to find
         # the 'machine (specific) yaml -CHANGE THIS!
-        super(MyGame, self).__init__('config/JD.yaml', self.curr_file_path)
+        super(Game, self).__init__('config/machine.yaml', self.curr_file_path)
 
         self.base_game_mode = BaseGameMode(game=self)
         self.machine_monitor = MachineMonitorMode(game=self)
@@ -50,7 +50,7 @@ class MyGame(SkeletonGame):
     # called when you want to fully reset the game
     def reset(self):
         # EVERY SkeletonGame game should start its reset() with a call to super()
-        super(MyGame,self).reset()
+        super(Game,self).reset()
 
         # initialize the mode variables; the general form is:
         # self.varName = fileName.classModeName(game=self)
@@ -71,4 +71,4 @@ class MyGame(SkeletonGame):
 ## and it will create an instance of the correct game objct and start running it!
 
 if __name__ == '__main__':
-    run_proc_game(MyGame)
+    run_proc_game(Game)

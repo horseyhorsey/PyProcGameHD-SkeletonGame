@@ -26,7 +26,7 @@ curr_file_path = os.path.dirname(os.path.abspath( __file__ ))
 logging.getLogger('game.driver').setLevel(logging.INFO)
 logging.getLogger('game.vdriver').setLevel(logging.INFO)
 
-class T2Game(SkeletonGame):
+class Game(SkeletonGame):
 
     # constructor for the game object; called once
     def __init__(self):
@@ -43,7 +43,7 @@ class T2Game(SkeletonGame):
         #    name the shooter-feeding coil 'trough'
         #    name trough switches numbered left-to-right trough1, trough2, trough3
         #    name the shooter lane switch 'shooter'
-        super(T2Game, self).__init__('config/T2.yaml', self.curr_file_path)
+        super(Game, self).__init__('config/machine.yaml', self.curr_file_path)
 
         self.base_game_mode = BaseGameMode(game=self)
         self.blank_mode = ExBlankMode(game=self)
@@ -65,7 +65,7 @@ class T2Game(SkeletonGame):
     # called when you want to fully reset the game
     def reset(self):
         # EVERY SkeletonGame game should start its reset() with a call to super()
-        super(T2Game,self).reset()
+        super(Game,self).reset()
         
         # initialize the mode variables; the general form is:
         # self.varName = fileName.classModeName(game=self)
@@ -98,7 +98,7 @@ class T2Game(SkeletonGame):
         """
 
         # always start by calling this:
-        super(T2Game, self).do_ball_search(silent) 
+        super(Game, self).do_ball_search(silent) 
         # this increases self.ball_search_tries; which you may want to check to
         # escalate the 'level' of your search.
 
@@ -117,5 +117,5 @@ class T2Game(SkeletonGame):
 ## and it will create an instance of the correct game objct and start running it!
 
 if __name__ == '__main__':
-    # change T2Game to be the class defined in this file!
-    run_proc_game(T2Game)
+    # change Game to be the class defined in this file!
+    run_proc_game(Game)

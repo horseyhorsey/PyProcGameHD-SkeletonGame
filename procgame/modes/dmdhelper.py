@@ -288,7 +288,7 @@ class DMDHelper(Mode):
                     lyrTmp.append(self.genMsgFrame(["Last Game","Final Scores"], background, font_key=fnt, font_style=font_style), duration)
 
                     for player in self.game.old_players:
-                        lT = self.genMsgFrame([player.name, self.game.score_display.format_score(player.score)], background,  font_key=fnt, font_style=font_style)
+                        lT = self.genMsgFrame([player.name, self.game.format_score(player.score)], background,  font_key=fnt, font_style=font_style)
                         lyrTmp.append(lT, duration)
 
                     duration = (last_score_count+1)*duration
@@ -309,7 +309,7 @@ class DMDHelper(Mode):
                         layer = dmd.HDTextLayer(self.game.dmd.width/2, offset, self.game.fonts[fnt], 'center', opaque = False)
                         layer.style = font_style
                         #print 'created the layer, now set text'
-                        layer.set_text("{0:<18}    {1:>18}".format(p.name, self.game.score_display.format_score(p.score)))
+                        layer.set_text("{0:<18}    {1:>18}".format(p.name, self.game.format_score(p.score)))
                         lyrTmp.layers += [layer]
 
             elif('RandomText' in yamlStruct):

@@ -2,10 +2,7 @@
 Sequence:
     - LastScores:
         Font: status
-        FontStyle: 
-            interior_color: [130,230,130]
-            line_width: 1
-            line_color: [60,60,60]
+        FontStyle: default
         # Background: dark_chrome
         # lampshow: attract_show_2
         # sound: sling
@@ -39,10 +36,7 @@ Sequence:
         duration: 1.0
     - HighScores:
         Font: status
-        FontStyle: 
-            interior_color: [130,230,130]
-            line_width: 1
-            line_color: [60,60,60]
+        FontStyle: default
         # Background: dark_chrome
         Order:
             - player

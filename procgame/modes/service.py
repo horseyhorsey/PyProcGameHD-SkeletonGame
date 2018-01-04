@@ -317,7 +317,7 @@ class SettingsEditor(ServiceModeList):
 			if 'increments' in itemlist[item]:
 				num_options = (itemlist[item]['options'][1]-itemlist[item]['options'][0]) / itemlist[item]['increments']
 				option_list = []
-				for i in range(0,num_options):
+				for i in range(0,int(num_options)):
 					option_list.append(itemlist[item]['options'][0] + (i * itemlist[item]['increments']))
 				self.items.append( EditItem(str(item), option_list, self.game.user_settings[self.name][item]) )
 			else:

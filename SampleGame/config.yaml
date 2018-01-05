@@ -32,6 +32,7 @@ dmd_framerate: 30
 screen_position_x: 123              # an offset for where the window should be located on launch -- 1366x768 is me, so 
 screen_position_y: 104              # 224*5x112*5 = 1120x560; the difference is 246x208 hence the offsets 123x104
 dmd_window_border: True             # show a window border?  In the machine, go without it, and with black wallpaper
+dmd_flip: 0                         # Flips the display
 
 PYSDL2_DLL_PATH: c:\P-ROC\DLLs\ # where to find the sdl2.dll
 

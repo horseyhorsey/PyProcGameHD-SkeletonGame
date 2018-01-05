@@ -3,10 +3,7 @@
 Sequence:
     - LastScores:
         Font: large
-        FontStyle: 
-            interior_color: [130,230,130]
-            line_width: 1
-            line_color: [60,60,60]
+        FontStyle: blueish
         Background: dark_chrome
         lampshow: attract_show_2
         sound: sling

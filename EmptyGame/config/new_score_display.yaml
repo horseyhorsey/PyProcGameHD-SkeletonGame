@@ -6,14 +6,13 @@ ScoreLayout:
             font_style: score_font_style
             h_justify: center
             v_justify: center
-            x:  0.5
+            x: 0.5
             y: 0.5
-            Background: flames
         CreditIndicator:                  
             visible: True # toggle this to False to make this invisible
             format: FREE PLAY
             font: score_sub
-            font_style: score_font_style
+            font_style: werid
             x:  0.05 # values can be 0.0 to 1.0 as percentage of display
             y: 1.0 # whole numbers are taken as literal X-Y dimensions
             h_justify: left     # the text will be positioned on a point
@@ -27,18 +26,13 @@ ScoreLayout:
             v_justify: bottom
             x:  0.95
             y: 1.0
-        Background: 
-            Animation: 
-                Name: dark_chrome
-        Foreground:
-            animation_layer: 
-                name: t800-war
-                x: 0.5
-                y: 0.5
+        # Background: 
+        #     Animation: 
+        #         Name: dark_chrome
     MultiPlayer:
-        Background: # if omitted here, Singleplayer value is used.  Set to None to disable
-            Animation: 
-                Name: chrome
+        # Background: # if omitted here, Singleplayer value is used.  Set to None to disable
+        #     Animation: 
+        #         Name: chrome
         Foreground: None # set to None to disable
         # CreditIndicator: # if you define these here too, they replace the others
         # BallNumber:   # as above

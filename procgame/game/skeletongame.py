@@ -21,7 +21,7 @@ from . import BasicGame
 from . import Player
 from .advancedmode import AdvancedMode
 from ..dmd import HDDisplayController, font_named, sdl2_DisplayManager
-from ..dmd.layers import SolidLayer, GroupedLayer
+from ..dmd.layers import SolidLayer, GroupedLayer, ScriptlessLayer
 from ..modes import ScoreDisplay, ScoreDisplayHD
 from ..modes import Trough, ballsave, BallSearch
 from ..modes import osc
@@ -107,7 +107,9 @@ class SkeletonGame(BasicGame):
         try:
             self.cleaned_up = False
             random.seed()
-            pygame.mixer.pre_init(44100,-16,2,512)
+
+            audio_buffer_size = config.value_for_key_path('audio_buffer_size', 512)
+            pygame.mixer.pre_init(44100,-16,2, audio_buffer_size)
 
             self.curr_file_path = curr_file_path
 
@@ -181,7 +183,7 @@ class SkeletonGame(BasicGame):
             self.game_tilted = False # indicates if any kind of tilt has occured; tilt, slam_tilt
 
             # create a sound controller (self.game.sound from within modes)
-            self.sound = sound.SoundController(self)
+            self.sound = sound.SoundController(self, buffer_size = audio_buffer_size)
             self.modes.add(self.sound)
 
             self.settings = []
@@ -452,6 +454,17 @@ class SkeletonGame(BasicGame):
         """
 
         return self.dmdHelper.genMsgFrame(msg, background_layer, font_style, font_key, opaque)
+
+    def generateScriptlessTextLayer(self,msg=[],font_key='med',font_style=None, duration=1.5,opaque=False,width=128,height=32):
+        """Returns a "ScriptlessLayer" of text layers from a list of strings.
+        """         
+        scriptLayer = ScriptlessLayer(width,height)
+        for index, text in enumerate(msg):
+            layer = self.generateLayer(text,font_style=font_style,font_key=font_key,opaque=opaque)
+            scriptLayer.append(layer,duration)
+        scriptLayer.append(None,10)
+
+        return scriptLayer         
 
     def ball_saver_enable(self, num_balls_to_save=1, time=5, now=True, allow_multiple_saves=False, callback=None):
         import warnings
@@ -1190,14 +1203,23 @@ class SkeletonGame(BasicGame):
 
         # ball time is handled in ball drained callback
 
+        # set total time played for each player available
+        totalTimePlayed = 0
+
         # Also handle game stats.
         for i in range(0,len(self.players)):
             game_time = self.get_game_time(i)
+            totalTimePlayed += game_time            
             self.game_data['Audits']['Avg Game Time'] = self.calc_time_average_string( self.game_data['Audits']['Games Played'], self.game_data['Audits']['Avg Game Time'], game_time)
             self.game_data['Audits']['Avg Score'] = self.calc_number_average(self.game_data['Audits']['Games Played'], self.game_data['Audits']['Avg Score'], self.players[i].score)
             self.game_data['Audits']['Games Played'] += 1
 
             self.logger.info("Skel: 'player %d score %d" % (i, self.players[i].score))
+
+        # Increment the total time game played
+        self.logger.info("Skel: Total Game Time: " + str(totalTimePlayed))
+        totalTimePlayedStr = self.get_total_time_played_string(self.game_data['Audits']['Total Game Time'], totalTimePlayed)
+        self.game_data['Audits']['Total Game Time'] = totalTimePlayedStr
 
         self.save_game_data('game_user_data.yaml')
 
@@ -1316,6 +1338,12 @@ class SkeletonGame(BasicGame):
         if (self.ball != 0):
             self.p = self.current_player()
             self.p.awardBonus(name,quantity, value)
+
+    def format_score(self, score):
+        """ Returns the score as a string formatted with commas """
+        if type(score) is str:
+            score = int(score)
+        return "{:,}".format(score)
 
     def run_loop(self, min_seconds_per_cycle=None):
         #sdl2_DisplayManager.inst().show_window(True)

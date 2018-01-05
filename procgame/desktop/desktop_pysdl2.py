@@ -60,6 +60,7 @@ class Desktop():
         self.dmd_screen_size = ((self.dots_w)*self.screen_scale, (self.dots_h)*self.screen_scale)
         self.dmd_soften = config.value_for_key_path(keypath='dmd_soften', default="0")
         self.use_rgb_dmd_device = config.value_for_key_path(keypath='rgb_dmd.enabled', default=False)
+        self.dmd_flip = config.value_for_key_path(keypath='dmd_flip', default=0)
         if(self.use_rgb_dmd_device):
             # turn off dots and scaling, since they are incompatible (at this time) --SDL2 bug.
             self.screen_scale = 1
@@ -189,7 +190,7 @@ class Desktop():
         sdl2_DisplayManager.inst().clear((0,0,0,255))
 
         if(not self.fullscreen==True):
-            sdl2_DisplayManager.inst().screen_blit(source_tx=frame.pySurface, expand_to_fill=True)
+            sdl2_DisplayManager.inst().screen_blit(source_tx=frame.pySurface, expand_to_fill=True, flip = self.dmd_flip)
         else:
             sdl2.SDL_RenderCopy(sdl2_DisplayManager.inst().texture_renderer.renderer, frame.pySurface.texture, None, sdl2.rect.SDL_Rect(0,0,self.window_w,self.window_h))
 

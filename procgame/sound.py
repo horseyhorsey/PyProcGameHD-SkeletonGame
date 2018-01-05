@@ -68,11 +68,11 @@ class SoundController(mode.Mode):  #made this a mode since I want to use delay f
     enabled = True
 
 
-    def __init__(self,game,priority=10):
+    def __init__(self,game,priority=10, buffer_size = 256):
         super(SoundController, self).__init__(game,priority)
         self.logger = logging.getLogger('game.sound')
-        try:
-            mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=256)  #256 prev
+        try:            
+            mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=buffer_size)  #256 prev
             mixer.init()
             mixer.set_num_channels(8)
 

@@ -60,14 +60,20 @@ class DMDHelper(Mode):
             i = 1
             for line in msg:
                 if (line != ""):
-                    line = str(line)
+                    if type(line) is int:
+                        line = str(line)
+                    else:
+                        line = line.decode('ascii', 'ignore')
                     tL = dmd.HDTextLayer(self.game.dmd.width/2, self.game.dmd.height*i/(num_lines+1), font, "center", vert_justify="center", opaque=False, width=self.game.dmd.width, height=100,line_color=font_style.line_color, line_width=font_style.line_width, interior_color=font_style.interior_color,fill_color=font_style.fill_color).set_text(line, blink_frames=flashing)
                     t_layers.append(tL)
                 i = i + 1
             t = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, t_layers)
         else:
             if(msg is not None):
-                msg = str(msg)
+                if type(msg) is int:
+                    msg = str(msg)
+                else:
+                    msg = msg.decode('ascii', 'ignore')                
             t = dmd.HDTextLayer(self.game.dmd.width/2, self.game.dmd.height/2, font, "center",  vert_justify="center",opaque=False, width=self.game.dmd.width, height=100,line_color=font_style.line_color, line_width=font_style.line_width, interior_color=font_style.interior_color,fill_color=font_style.fill_color).set_text(msg, blink_frames=flashing)
 
         if(background_layer is None):
@@ -282,7 +288,7 @@ class DMDHelper(Mode):
                     lyrTmp.append(self.genMsgFrame(["Last Game","Final Scores"], background, font_key=fnt, font_style=font_style), duration)
 
                     for player in self.game.old_players:
-                        lT = self.genMsgFrame([player.name, self.game.score_display.format_score(player.score)], background,  font_key=fnt, font_style=font_style)
+                        lT = self.genMsgFrame([player.name, self.game.format_score(player.score)], background,  font_key=fnt, font_style=font_style)
                         lyrTmp.append(lT, duration)
 
                     duration = (last_score_count+1)*duration
@@ -303,7 +309,7 @@ class DMDHelper(Mode):
                         layer = dmd.HDTextLayer(self.game.dmd.width/2, offset, self.game.fonts[fnt], 'center', opaque = False)
                         layer.style = font_style
                         #print 'created the layer, now set text'
-                        layer.set_text("{0:<18}    {1:>18}".format(p.name, self.game.score_display.format_score(p.score)))
+                        layer.set_text("{0:<18}    {1:>18}".format(p.name, self.game.format_score(p.score)))
                         lyrTmp.layers += [layer]
 
             elif('RandomText' in yamlStruct):

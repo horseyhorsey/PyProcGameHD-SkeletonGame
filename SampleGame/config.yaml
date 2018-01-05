@@ -34,6 +34,8 @@ screen_position_y: 104              # 224*5x112*5 = 1120x560; the difference is 
 dmd_window_border: True             # show a window border?  In the machine, go without it, and with black wallpaper
 dmd_flip: 0                         # Flips the display
 
+audio_buffer_size: 512              # 256, 512, 1024, 2048, 4096
+
 PYSDL2_DLL_PATH: c:\P-ROC\DLLs\ # where to find the sdl2.dll
 
 vp_game_map_file: /P-ROC/shared/vp_game_map.yaml  # relevant for Visual Pinball (only)

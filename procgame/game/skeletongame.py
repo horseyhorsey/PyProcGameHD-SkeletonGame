@@ -890,8 +890,14 @@ class SkeletonGame(BasicGame):
         """
         self.asset_mgr = assetmanager.AssetManager(game=self)
         self.animations = self.asset_mgr.animations
+        self.skipped_animations = self.asset_mgr.skipped_animations
         self.fontstyles = self.asset_mgr.fontstyles
         self.fonts = self.asset_mgr.fonts
+
+    def load_skipped_asset(self, assetkey):
+        anim = self.skipped_animations[assetkey]
+        if (anim != ""):
+            return self.asset_mgr.load_skipped_anim(anim)        
 
     def load_volume(self):
         try:

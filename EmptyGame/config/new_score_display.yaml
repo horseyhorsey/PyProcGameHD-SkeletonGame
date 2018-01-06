@@ -12,7 +12,7 @@ ScoreLayout:
             visible: True # toggle this to False to make this invisible
             format: FREE PLAY
             font: score_sub
-            font_style: werid
+            font_style: blueish
             x:  0.05 # values can be 0.0 to 1.0 as percentage of display
             y: 1.0 # whole numbers are taken as literal X-Y dimensions
             h_justify: left     # the text will be positioned on a point

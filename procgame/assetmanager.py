@@ -38,6 +38,7 @@ class AssetManager(object):
     animations = DictWithDefault(default_miss_key='missing')
     lengths = DictWithDefault(default_miss_key='missing')
     fonts = DictWithDefault(default_miss_key='default')
+    skipped_animations = {}
     sounds = {}
     fontstyles = {}
     numLoaded = 0
@@ -207,6 +208,35 @@ class AssetManager(object):
         #   self.animations[key].composite_op = composite_op
         self.numLoaded += 1
 
+    def load_skipped_anim(self, anim):
+        
+        k  = value_for_key(anim,'key')
+        ft = value_for_key(anim,'frame_time',2)
+        f  = value_for_key(anim,'file')
+        r  = value_for_key(anim,'repeatAnim',False)
+        h  = value_for_key(anim,'holdLastFrame',False)
+        o  = value_for_key(anim,'opaque',False)
+        c  = value_for_key(anim,'composite_op')
+        x  = value_for_key(anim, 'x_loc', 0)
+        y  = value_for_key(anim, 'y_loc', 0)
+        streaming_load  = value_for_key(anim, 'streamingMovie', False)
+        png_stream_cache  = value_for_key(anim, 'streamingPNG_Cached', False)
+        streaming_png  = value_for_key(anim, 'streamingPNG', png_stream_cache)
+        skipPreLoading  = value_for_key(anim, 'skipPreLoading', False)
+        loadedAnim = None
+
+        if not streaming_load:
+            tmp = dmd.Animation().load(self.dmd_path + f , composite_op=c, use_streaming_mode = streaming_png, png_stream_cache=png_stream_cache)
+
+        if(streaming_load):
+            loadedAnim = dmd.MovieLayer(o, hold=h, repeat=r, frame_time=ft, movie_file_path=self.dmd_path + f, transparency_op=c)
+        else:
+            loadedAnim = dmd.AnimatedLayer(frames=tmp.frames, frame_time=ft, repeat=r, hold=h, opaque = o)
+        
+        loadedAnim.set_target_position(x, y)
+
+        return loadedAnim        
+
     def load(self):
         l = logging.getLogger("PIL.PngImagePlugin")
         l.setLevel(logging.WARNING)
@@ -325,12 +355,16 @@ class AssetManager(object):
                 streaming_load  = value_for_key(anim, 'streamingMovie', False)
                 png_stream_cache  = value_for_key(anim, 'streamingPNG_Cached', False)
                 streaming_png  = value_for_key(anim, 'streamingPNG', png_stream_cache)
+                skipPreLoading  = value_for_key(anim, 'skipPreLoading', False)
                 current = 'Animation: [%s]: %s' % (k, f)
                 # started = timeit.time.time()
-                started = timeit.time.time()
-                self.loadIntoCache(k,ft,f,r,h,o,c,x,y,streaming_load, streaming_png, png_stream_cache)
-                time_taken = timeit.time.time() - started
-                self.logger.info("loading visual asset took %.3f seconds" % time_taken)
+                if skipPreLoading: # Store the animations that have the skipPreLoading flag
+                    self.skipped_animations[k] = anim
+                else:
+                    started = timeit.time.time()
+                    self.loadIntoCache(k,ft,f,r,h,o,c,x,y,streaming_load, streaming_png, png_stream_cache)
+                    time_taken = timeit.time.time() - started
+                    self.logger.info("loading visual asset took %.3f seconds" % time_taken)
         except:
             self.logger.error("===ASSET MANAGER - ASSET FAILURE===")
             self.logger.error(current)

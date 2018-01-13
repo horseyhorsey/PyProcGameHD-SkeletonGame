@@ -4,6 +4,7 @@ user_settings.yaml
 dist
 build
 pyprocgame.egg-info
+.idea
 *.bak
 *.png
 *.ttf

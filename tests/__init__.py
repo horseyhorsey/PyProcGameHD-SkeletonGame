@@ -4,3 +4,4 @@
 # 
 from test_attrcollection import *
 from test_events import *
+from test_profile_manager import *

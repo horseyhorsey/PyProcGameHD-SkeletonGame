@@ -1,14 +1,29 @@
 from os import listdir, path
+from procgame.profiles import gamedata
+import time
 
 __author__ = 'Dave Horsefield'
-
-from procgame.profiles import gamedata
 
 
 class Trophy(gamedata.GameDataItem):
 
     def __init__(self, name):
         super(Trophy, self).__init__(name)
+
+    def is_trophy_completed(self, key):
+        """ Returns whether a trophy is completed """
+
+        # Check first to see if there is data loaded for the trophy
+        if bool(self.player_data):
+            if not self.player_data['Trophys'][key]['completedDate']:
+                return False
+            else:
+                return True
+
+    def set_completed(self, key):
+        """ adds the current datetime to the complete date"""
+        if bool(self.player_data):
+            self.player_data['Trophys'][key]['completedDate'] = time.asctime()
 
 
 class TrophyManager(gamedata.GameData):
@@ -31,6 +46,6 @@ class TrophyManager(gamedata.GameData):
             if path.splitext(trophy_filename)[1] == '.yaml':
                 # Get the data and create a new trophy
                 _file_data = self._load_data_from_file(path.join(self.save_dir, trophy_filename))
-                _trophy = Trophy(trophy_filename[0])
+                _trophy = Trophy(path.splitext(trophy_filename)[0])
                 _trophy.player_data = _file_data
                 self.trophys.append(_trophy)

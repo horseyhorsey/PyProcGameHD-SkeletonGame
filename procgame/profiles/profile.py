@@ -33,7 +33,7 @@ class ProfileManager(gamedata.GameData):
             if path.splitext(profile_filename)[1] == '.yaml':
                 # Get the data and create a new profile
                 _file_data = self._load_data_from_file(path.join(self.save_dir, profile_filename))
-                _profile = Profile(profile_filename[0])
+                _profile = Profile(path.splitext(profile_filename)[0])
                 _profile.player_data = _file_data
                 self.profiles.append(_profile)
 

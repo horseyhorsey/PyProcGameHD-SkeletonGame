@@ -10,6 +10,10 @@ class Profile(gamedata.GameDataItem):
     def __init__(self, name):
         super(Profile, self).__init__(name)
 
+    def __iter__(self):
+        for each in self.__dict__.keys():
+            yield self.__getattribute__(each)
+
 
 class ProfileManager(gamedata.GameData):
     """ Manages profiles"""
@@ -19,6 +23,14 @@ class ProfileManager(gamedata.GameData):
 
     def __init__(self, template_file, saved_profiles_dir):
         super(ProfileManager, self).__init__(template_file, saved_profiles_dir)
+
+    def create(self, name):
+        _empty_data = self._get_template_keys({})
+        _profile = Profile(name)
+        _profile.player_data = _empty_data
+        self.save_data_to_disk(_profile.player_data, path.join(self.save_dir, _profile.player_name + '.yaml'))
+        self.profiles.append(_profile)
+        pass
 
     def populate_profiles_from_directory(self):
         """ Clears current list and loads all profiles found on disk into the local profiles list """

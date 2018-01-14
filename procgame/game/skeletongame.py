@@ -15,7 +15,6 @@
 #       font: default_msg
 #
 ##########################
-
 from . import GameController
 from . import BasicGame
 from . import Player
@@ -26,7 +25,8 @@ from ..modes import ScoreDisplay, ScoreDisplayHD
 from ..modes import Trough, ballsave, BallSearch
 from ..modes import osc
 from ..modes import DMDHelper, SwitchMonitor
-from ..modes import bonusmode, service, Attract, TiltMonitorMode, Tilted
+from ..modes import bonusmode, service, Attract, TiltMonitorMode, Tilted, ProfileMenu
+from procgame.profiles import ProfileManager, TrophyManager
 #from ..modes import serviceHD
 
 from .. import sound
@@ -104,6 +104,9 @@ class SkeletonGame(BasicGame):
         more of the functionality that one expects to be in a 'generic' 'modern' pinball machine
     """
     def __init__(self, machineYamlFile, curr_file_path, machineType=None):
+
+        self.profile_manager = None
+
         try:
             self.cleaned_up = False
             random.seed()
@@ -211,6 +214,8 @@ class SkeletonGame(BasicGame):
             self.use_ballsearch_mode = config.value_for_key_path('default_modes.ball_search', True)
             self.use_multiline_score_entry = config.value_for_key_path('default_modes.multiline_highscore_entry', False)
             self.ballsearch_time = config.value_for_key_path('default_modes.ball_search_delay', 30)
+            self.use_player_profiles = config.value_for_key_path('default_modes.player_profiles', False)
+            self.use_player_trophys = config.value_for_key_path('default_modes.player_trophys', False)
 
             self.dmdHelper = DMDHelper(game=self)
             self.modes.add(self.dmdHelper)
@@ -224,6 +229,13 @@ class SkeletonGame(BasicGame):
                 self.bonus_mode = bonusmode.BonusMode(game=self)
 
             self.load_settings_and_stats()
+
+            if self.use_player_profiles:
+                self.load_profiles('config/profile_default_data.yaml', 'config/profiles')
+                self.profiles_menu_mode = ProfileMenu(self, 125)
+                # Only use trophys if using profiles
+                if self.use_player_trophys:
+                    self.load_trophys('config/trophy_default_data.yaml', 'config/trophys')
 
             #if(self.use_HD_servicemode):
             #    self.service_mode = serviceHD.ServiceModeHD(self, 99, self.fonts['settings-font-small'], self.fonts['settings-font-small'], extra_tests=[])
@@ -883,6 +895,14 @@ class SkeletonGame(BasicGame):
     def load_settings(self, file_default, file_game):
         return super(SkeletonGame, self).load_settings(os.path.join('config/' + file_default),os.path.join('config/' + file_game))
 
+    def load_profiles(self, profile_template, profile_directory):
+        self.profile_manager = ProfileManager(profile_template, profile_directory)
+        self.profile_manager.populate_profiles_from_directory()
+
+    def load_trophys(self, trophy_template, trophys_directory):
+        self.trophy_manager = TrophyManager(trophy_template, trophys_directory)
+        self.trophy_manager.populate_trophy_from_directory()
+
     def load_assets(self):
         """ function to clean up code/make things easier to read;
             this handles reading/loading of all assets (sounds, dmd images,
@@ -1156,34 +1176,12 @@ class SkeletonGame(BasicGame):
         """ this happens after start_game but before start_ball/ball_starting"""
         self.logger.info("Skel:Game START Requested...(check trough first)")
 
-        # check trough and potentially do a ball search first
-        if(self.game_start_pending and (self.trough.num_balls() < self.num_balls_total)):
-            self.logger.info("Skel: Game START : PLEASE WAIT!! -- TROUGH STATE is still BLOCKING GAME START!")
-            # self.set_status("Balls STILL Missing: PLEASE WAIT!!", 3.0)
-            self.notifyModes('evt_balls_missing', args=None, event_complete_fn=None)
+        # Check if we can start the game
+        if not self.check_trough_is_ready():
             return
-
-        if(self.trough.num_balls() < self.num_balls_total):
-            self.game_start_pending=True
-            self.logger.info("Skel: game_started: trough isn't full [%d of %d] -- requesting search" % (self.trough.num_balls(), self.num_balls_total))
-            if(self.use_ballsearch_mode):
-                self.ball_search.perform_search(3,  completion_handler=self.reset_search)
-                self.logger.debug("Skel: game_started: Standard ball search initiated")
-            else:
-                self.logger.debug("Skel: game_started: Programmer custom ball search initiated")
-                self.do_ball_search(silent=False)
-                self.ball_search.delay(name='ballsearch_start_delay', event_type=None, delay=3.0, handler=self.reset_search)
-            return
-        else: # we have the right number of balls
-            self.game_start_pending=False
-            if(self.use_ballsearch_mode):
-                self.ball_search.cancel_delayed(name='ballsearch_start_delay')
-
-        self.logger.info("Skel:Game START Proceeding")
 
         # remove attract mode
         self.modes.remove(self.attract_mode)
-
         super(SkeletonGame, self).game_started()
 
         for m in self.known_modes[AdvancedMode.Game]:
@@ -1195,11 +1193,44 @@ class SkeletonGame(BasicGame):
 
         self.notifyModes('evt_game_starting', args=None, event_complete_fn=self.actually_start_game)
 
+    def check_trough_is_ready(self):
+        # check trough and potentially do a ball search first
+        if(self.game_start_pending and (self.trough.num_balls() < self.num_balls_total)):
+            self.logger.info("Skel: Game START : PLEASE WAIT!! -- TROUGH STATE is still BLOCKING GAME START!")
+            # self.set_status("Balls STILL Missing: PLEASE WAIT!!", 3.0)
+            self.notifyModes('evt_balls_missing', args=None, event_complete_fn=None)
+            return False
+
+        if(self.trough.num_balls() < self.num_balls_total):
+            self.game_start_pending=True
+            self.logger.info("Skel: game_started: trough isn't full [%d of %d] -- requesting search" % (self.trough.num_balls(), self.num_balls_total))
+            if(self.use_ballsearch_mode):
+                self.ball_search.perform_search(3,  completion_handler=self.reset_search)
+                self.logger.debug("Skel: game_started: Standard ball search initiated")
+            else:
+                self.logger.debug("Skel: game_started: Programmer custom ball search initiated")
+                self.do_ball_search(silent=False)
+                self.ball_search.delay(name='ballsearch_start_delay', event_type=None, delay=3.0, handler=self.reset_search)
+            return False
+        else: # we have the right number of balls
+            self.game_start_pending=False
+            if(self.use_ballsearch_mode):
+                self.ball_search.cancel_delayed(name='ballsearch_start_delay')
+
+            return True
+
+        self.logger.info("Skel:Game START Proceeding")
+
     def actually_start_game(self):
-        # Add the first player
-        self.add_player()
-        # Start the ball.  This includes ejecting a ball from the trough.
-        self.start_ball()
+
+        if self.use_player_profiles:
+            # self.modes.remove(self.attract_mode)
+            self.modes.add(self.profiles_menu_mode)
+        else:
+            # Add the first player
+            self.add_player()
+            # Start the ball.  This includes ejecting a ball from the trough.
+            self.start_ball()
 
     def end_game(self):
         """Called by the implementor to mark notify the game that the game has ended."""
@@ -1383,6 +1414,12 @@ class AdvPlayer(Player):
 
     bonus_records = None
     """ the information about bonuses awarded to the player on this ball (or held over) """
+
+    profile = None
+    """ The players profile to save audits, scores, stats per player """
+
+    trophy = None
+    """ The players trophy object"""
 
     def __init__(self, name):
         super(AdvPlayer, self).__init__(name)

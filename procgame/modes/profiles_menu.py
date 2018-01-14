@@ -267,8 +267,8 @@ class ProfileMenu(Mode):
                 self.load_menu(1)
             # Back to Attract
             elif self._selected_frame == 2:
+                self.game.game_ended()
                 self.game.modes.remove(self)
-                self.game.start_attract_mode()
         # Players Menu
         elif self._current_menu == 1:
             # Main Menu

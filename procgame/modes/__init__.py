@@ -12,7 +12,8 @@ __all__ = [
     'attract',
     'tilt',
     'switchmonitor',
-    'rgbshow'
+    'rgbshow',
+    'profiles_menu'
 ]
 from ballsave import *
 from ballsearch import *
@@ -28,6 +29,7 @@ from attract import *
 from tilt import *
 from switchmonitor import *
 from rgbshow import *
+from profiles_menu import *
 
 from ..game import Mode
 

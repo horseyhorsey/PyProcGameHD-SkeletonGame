@@ -1,7 +1,9 @@
 __all__ = [
     'gamedata',
-    'profile'
+    'profile',
+    'trophy'
 ]
 
 from gamedata import *
 from profile import *
+from trophy import *

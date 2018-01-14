@@ -17,7 +17,9 @@ default_modes:  # these are the default provided modes by SkeletonGame; turn the
     bonus_tally: True
     osc_input: True
     service_mode: True
-    ball_search: True   # indicates the game should use yaml tags for "smart" ball search 
+    ball_search: True   # indicates the game should use yaml tags for "smart" ball search
+    player_profiles: False
+    player_trophys: False
 pinproc_class: procgame.fakepinproc.FakePinPROC # comment out this line when using a real P-ROC. 
 
 # all of this is for the hdDMD

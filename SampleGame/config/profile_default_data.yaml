@@ -8,10 +8,10 @@ Audits:
   Games Started: 0
   Balls Played: 0
 ClassicHighScores:
-  - {inits: GSS, score: 500}
-  - {inits: ASP, score: 400}
-  - {inits: JRP, score: 300}
-  - {inits: JAG, score: 200}
-  - {inits: JTW, score: 100}
+  - {inits: Empty, score: 0}
+  - {inits: Empty, score: 0}
+  - {inits: Empty, score: 0}
+  - {inits: Empty, score: 0}
+  - {inits: Empty, score: 0}
 LoopsHighScoreData:
-  - {inits: GSS, score: 5}
+  - {inits: Empty, score: 0}

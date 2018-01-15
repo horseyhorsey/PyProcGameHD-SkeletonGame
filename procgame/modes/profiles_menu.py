@@ -218,6 +218,7 @@ class ProfileMenu(Mode):
 
         self.game.log('Creating new profile for {}'.format(inits))
         self.game.profile_manager.create(inits)
+        self.game.trophy_manager.create(inits)
         self._players[self._selected_player] = inits
         self.load_menu(1)
         pass
@@ -245,6 +246,9 @@ class ProfileMenu(Mode):
             self.game.players[i].name = player
             self.game.players[i].profile = _profile[0]
 
+            if self.game.use_player_trophys:
+                _trophy = [trophy for (trophy) in self.game.trophy_manager.trophys if trophy.player_name == player]
+                self.game.players[i].trophy = _trophy[0]
             i += 1
 
         # Set the menu back to the main menu and remove the mode
@@ -289,7 +293,8 @@ class ProfileMenu(Mode):
             # Load profile
             elif self._selected_frame == 1:
                 # Load profile selection
-                self.load_menu(3)
+                if self.profile_manager.profiles:
+                    self.load_menu(3)
                 pass
             # New profile - Load HD Entry
             elif self._selected_frame == 2:

@@ -10,6 +10,10 @@ class Trophy(gamedata.GameDataItem):
     def __init__(self, name):
         super(Trophy, self).__init__(name)
 
+    def save(self, save_dir):
+        """ Saves the profile to disk """
+        TrophyManager.save_data_to_disk(self.player_data, path.join(save_dir, self.player_name + '.yaml'))
+
     def is_trophy_completed(self, key):
         """ Returns whether a trophy is completed """
 
@@ -32,6 +36,14 @@ class TrophyManager(gamedata.GameData):
 
     def __init__(self, template_file, saved_profiles_dir):
         super(TrophyManager, self).__init__(template_file, saved_profiles_dir)
+
+    def create(self, name):
+        """ Creates a trophy file for the player """
+        _empty_data = self._get_template_keys({})
+        trophy = Trophy(name)
+        trophy.player_data = _empty_data
+        self.save_data_to_disk(trophy.player_data, path.join(self.save_dir, trophy.player_name + '.yaml'))
+        self.trophys.append(trophy)
 
     def populate_trophy_from_directory(self):
         """ Clears current list and loads all trophy's found on disk into the local trophys list """

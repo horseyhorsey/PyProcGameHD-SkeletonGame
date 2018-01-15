@@ -908,6 +908,47 @@ class SkeletonGame(BasicGame):
         self.profile_manager = ProfileManager(profile_template, profile_directory)
         self.profile_manager.populate_profiles_from_directory()
 
+    def save_player_profile(self, plr_index):
+        """ Saves the players profile to disk if data is available """
+
+        curr_plr_profile = self.players[plr_index].profile
+        if curr_plr_profile is None:
+            return
+
+        ply_data = curr_plr_profile.player_data
+        if bool(ply_data):
+            ply_name = curr_plr_profile.player_name
+            plr_score = self.players[plr_index].score
+            game_time = self.get_game_time(plr_index)
+
+            ply_data['Audits']['Games Played'] += 1
+
+            _ply_total_time = ply_data['Audits']['Total Game Time']
+            _ply_total_time = self.get_total_time_played_string(_ply_total_time, game_time)
+            ply_data['Audits']['Total Game Time'] = _ply_total_time
+
+            ply_data['Audits']['Avg Game Time'] = \
+                self.calc_time_average_string(ply_data['Audits']['Games Played'],
+                                              ply_data['Audits']['Avg Game Time'], game_time)
+            ply_data['Audits']['Avg Score'] = \
+                self.calc_number_average(ply_data['Audits']['Games Played'],
+                                         ply_data['Audits']['Avg Score'], plr_score)
+
+            # Save players hi scores if beaten
+            _hiScores = ply_data['ClassicHighScores']
+            try:
+                for x in _hiScores:
+                    if plr_score > x['score']:
+                        x['score'] = plr_score
+                        x['inits'] = ply_name
+                        break
+            except Exception, e:
+                self.log('Failed adjusting players score')
+                pass
+
+            curr_plr_profile.save(self.profile_manager.save_dir)
+        pass
+
     def load_trophys(self, trophy_template, trophys_directory):
         self.trophy_manager = TrophyManager(trophy_template, trophys_directory)
         self.trophy_manager.populate_trophy_from_directory()
@@ -996,14 +1037,38 @@ class SkeletonGame(BasicGame):
             # Calculate ball time and save it because the start time
             # gets overwritten when the next ball starts.
             self.ball_time = self.get_ball_time()
+            ball_time_seconds = round(self.ball_time)
             self.current_player().game_time += self.ball_time
 
             self.game_data['Audits']['Avg Ball Time'] = self.calc_time_average_string(self.game_data['Audits']['Balls Played'], self.game_data['Audits']['Avg Ball Time'], self.ball_time)
             self.game_data['Audits']['Balls Played'] += 1
+            longest_ball_time = self.game_data['Audits']['Longest Ball Time']
+            longest_ball_time = self.get_seconds_from_string(longest_ball_time)
+            if ball_time_seconds > longest_ball_time:
+                self.game_data['Audits']['Longest Ball Time'] = self.get_total_time_played_string(
+                    addTime=ball_time_seconds)
             # can't save here as file might still be open on game end...
             # self.save_game_data('game_user_data.yaml')
 
-            # Remove ball drained logic until the ball is fed into the shooter lane again
+            # Update player profile values
+            plr_profile = self.current_player().profile
+            if plr_profile is not None:
+                if bool(plr_profile.player_data):
+                    plr_data = plr_profile.player_data
+
+                    plr_data['Audits']['Balls Played'] += 1
+                    plr_data['Audits']['Avg Ball Time'] = self.calc_time_average_string(
+                        plr_data['Audits']['Balls Played'], plr_data['Audits']['Avg Ball Time'], self.ball_time)
+
+                    # Add to longest ball time if beaten
+                    longest_ball_time = plr_data['Audits']['Longest Ball Time']
+                    longest_ball_time = self.get_seconds_from_string(longest_ball_time)
+                    if ball_time_seconds > longest_ball_time:
+                        plr_data['Audits']['Longest Ball Time'] = self.get_total_time_played_string(
+                            addTime=ball_time_seconds)
+                    self.logger.info("Updated players profile")
+
+        # Remove ball drained logic until the ball is fed into the shooter lane again
             self.trough.drain_callback = None
             self.trough.launch_callback = None
             self.trough.launched_callback = self.__install_drain_logic
@@ -1261,6 +1326,9 @@ class SkeletonGame(BasicGame):
             self.game_data['Audits']['Games Played'] += 1
 
             self.logger.info("Skel: 'player %d score %d" % (i, self.players[i].score))
+
+            # Save players profile if available
+            self.save_player_profile(i)
 
         # Increment the total time game played
         self.logger.info("Skel: Total Game Time: " + str(totalTimePlayed))

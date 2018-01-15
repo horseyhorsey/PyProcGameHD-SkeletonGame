@@ -25,6 +25,10 @@ class GameData(object):
 
         self._initialize_template_and_saved_directory()
 
+    def __iter__(self):
+        for each in self.__dict__.keys():
+            yield self.__getattribute__(each)
+
     def _initialize_template_and_saved_directory(self):
         """ Makes sure directory exists for profiles and loads the template values """
         if not path.exists(self.save_dir):

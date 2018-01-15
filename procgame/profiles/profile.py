@@ -10,10 +10,6 @@ class Profile(gamedata.GameDataItem):
     def __init__(self, name):
         super(Profile, self).__init__(name)
 
-    def __iter__(self):
-        for each in self.__dict__.keys():
-            yield self.__getattribute__(each)
-
     def save(self, save_dir):
         """ Saves the profile to disk """
         ProfileManager.save_data_to_disk(self.player_data, path.join(save_dir, self.player_name + '.yaml'))

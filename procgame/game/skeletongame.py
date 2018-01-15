@@ -27,6 +27,7 @@ from ..modes import osc
 from ..modes import DMDHelper, SwitchMonitor
 from ..modes import bonusmode, service, Attract, TiltMonitorMode, Tilted, ProfileMenu
 from procgame.profiles import ProfileManager, TrophyManager
+from ..modes.trophymode import TrophyMode
 #from ..modes import serviceHD
 
 from .. import sound
@@ -106,6 +107,7 @@ class SkeletonGame(BasicGame):
     def __init__(self, machineYamlFile, curr_file_path, machineType=None):
 
         self.profile_manager = None
+        self.trophy_manager = None
 
         try:
             self.cleaned_up = False
@@ -246,6 +248,7 @@ class SkeletonGame(BasicGame):
                 # Only use trophys if using profiles
                 if self.use_player_trophys:
                     self.load_trophys('config/trophy_default_data.yaml', 'config/trophys')
+                    self.trophy_mode = TrophyMode(self)
 
             #if(self.use_HD_servicemode):
             #    self.service_mode = serviceHD.ServiceModeHD(self, 99, self.fonts['settings-font-small'], self.fonts['settings-font-small'], extra_tests=[])
@@ -949,6 +952,13 @@ class SkeletonGame(BasicGame):
             curr_plr_profile.save(self.profile_manager.save_dir)
         pass
 
+    def save_player_trophy(self, plr_index):
+        """ Saves the players trophy to disk if data is available """
+
+        curr_plr_trophy = self.players[plr_index].trophy
+        if curr_plr_trophy is not None:
+            curr_plr_trophy.save(self.trophy_manager.save_dir)
+
     def load_trophys(self, trophy_template, trophys_directory):
         self.trophy_manager = TrophyManager(trophy_template, trophys_directory)
         self.trophy_manager.populate_trophy_from_directory()
@@ -1318,7 +1328,7 @@ class SkeletonGame(BasicGame):
         totalTimePlayed = 0
 
         # Also handle game stats.
-        for i in range(0,len(self.players)):
+        for i in range(0, len(self.players)):
             game_time = self.get_game_time(i)
             totalTimePlayed += game_time            
             self.game_data['Audits']['Avg Game Time'] = self.calc_time_average_string( self.game_data['Audits']['Games Played'], self.game_data['Audits']['Avg Game Time'], game_time)
@@ -1329,6 +1339,10 @@ class SkeletonGame(BasicGame):
 
             # Save players profile if available
             self.save_player_profile(i)
+
+            # Save player trophy
+            if self.use_player_trophys:
+                self.save_player_trophy(i)
 
         # Increment the total time game played
         self.logger.info("Skel: Total Game Time: " + str(totalTimePlayed))

@@ -49,6 +49,8 @@ Animations:
   file: 'texture.png'
 - key: 'status_bg'
   file: light_texture.png
+- key: 'trophy'
+  file: trophy.png
 Fonts:
   FontStyles:
   - key: status_font_style

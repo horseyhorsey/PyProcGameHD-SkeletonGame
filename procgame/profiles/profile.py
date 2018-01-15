@@ -14,6 +14,10 @@ class Profile(gamedata.GameDataItem):
         for each in self.__dict__.keys():
             yield self.__getattribute__(each)
 
+    def save(self, save_dir):
+        """ Saves the profile to disk """
+        ProfileManager.save_data_to_disk(self.player_data, path.join(save_dir, self.player_name + '.yaml'))
+
 
 class ProfileManager(gamedata.GameData):
     """ Manages profiles"""

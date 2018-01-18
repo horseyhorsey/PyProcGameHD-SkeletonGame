@@ -3,7 +3,7 @@ Sequence:
     - LastScores:
         Font: status
         FontStyle: default
-        # Background: dark_chrome
+        # Animation: dark_chrome
         # lampshow: attract_show_2
         # sound: sling
         duration: 2.0
@@ -37,7 +37,7 @@ Sequence:
     - HighScores:
         Font: status
         FontStyle: default
-        # Background: dark_chrome
+        # Animation: dark_chrome
         Order:
             - player
             - category

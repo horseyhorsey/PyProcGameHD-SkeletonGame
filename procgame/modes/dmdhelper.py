@@ -259,7 +259,7 @@ class DMDHelper(Mode):
                 fields = value_for_key(v,'Order')
                 (fnt, font_style) = self.parse_font_data(v, required=False)
 
-                background = value_for_key(v,'Background', value_for_key(v,'Animation'))
+                background = value_for_key(v,'Animation', value_for_key(v,'Animation'))
 
                 # lyrTmp = dmd.ScriptlessLayer(self.game.dmd.width,self.game.dmd.height)
                 # entry_ct = len(self.game.get_highscore_data())
@@ -284,7 +284,7 @@ class DMDHelper(Mode):
 
                 (fnt, font_style) = self.parse_font_data(v, required=False)
 
-                background = value_for_key(v,'Background', value_for_key(v,'Animation'))
+                background = value_for_key(v,'Animation', value_for_key(v,'Animation'))
 
                 multiple_screens = value_for_key(v, 'multiple_screens', False)
 

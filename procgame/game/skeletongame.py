@@ -850,7 +850,10 @@ class SkeletonGame(BasicGame):
 
         sect_dict = self.config['PRSwitches']
         for name in sect_dict:
-            item_dict = sect_dict[name]
+            if not isinstance(sect_dict, list):
+                item_dict = sect_dict[name]
+            else:
+                item_dict = name
 
             if ('ballsearch' in item_dict):
                 self.switches[name].ballsearch = item_dict['ballsearch']
@@ -858,7 +861,10 @@ class SkeletonGame(BasicGame):
 
         sect_dict = self.config['PRCoils']
         for name in sect_dict:
-            item_dict = sect_dict[name]
+            if not isinstance(sect_dict, list):
+                item_dict = sect_dict[name]
+            else:
+                item_dict = name
 
             if ('ballsearch' in item_dict):
                 self.coils[name].ballsearch = item_dict['ballsearch']

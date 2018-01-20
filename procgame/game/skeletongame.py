@@ -852,22 +852,24 @@ class SkeletonGame(BasicGame):
         for name in sect_dict:
             if not isinstance(sect_dict, list):
                 item_dict = sect_dict[name]
+                if ('ballsearch' in item_dict):
+                    self.switches[name].ballsearch = item_dict['ballsearch']
             else:
                 item_dict = name
-
-            if ('ballsearch' in item_dict):
-                self.switches[name].ballsearch = item_dict['ballsearch']
+                if ('ballsearch' in item_dict):
+                    self.switches[name['name']].ballsearch = item_dict['ballsearch']
 
 
         sect_dict = self.config['PRCoils']
         for name in sect_dict:
             if not isinstance(sect_dict, list):
                 item_dict = sect_dict[name]
+                if ('ballsearch' in item_dict):
+                    self.coils[name].ballsearch = item_dict['ballsearch']
             else:
                 item_dict = name
-
-            if ('ballsearch' in item_dict):
-                self.coils[name].ballsearch = item_dict['ballsearch']
+                if ('ballsearch' in item_dict):
+                    self.coils[name['name']].ballsearch = item_dict['ballsearch']
 
 
     def load_settings_and_stats(self):

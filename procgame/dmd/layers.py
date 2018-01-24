@@ -309,48 +309,40 @@ class MovieLayer(Layer):
         """Returns the frame to be shown, or None if there is no frame."""
         #lets check if we are at end of video and if not, grab next frame
         #and convert to a surface and shove into frame
-
+        
         # Important: Notify the frame listeners before frame_pointer has been advanced.
         # Only notify the listeners if this is the first time this frame has been shown
         # (such as if frame_time is > 1).
         if self.frame_time_counter == self.frame_time:
             self.notify_frame_listeners()
-
+        
         self.frame_time_counter -= 1
-
+        
         rval = None
         #now we grab the next frame
         if (self.frame_pointer >= self.movie.frame_count) and self.frame_time_counter == 0:
             if self.repeat:
                 self.frame_pointer = 0
-                self.movie.vc.set(capPropId("POS_FRAMES"),0)
+                self.movie.vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES,0)
             elif self.hold:
                 self.frame_time_counter = self.frame_time
                 return self.frame
             else:
-                self.frame_time_counter = 0
+                self.frame_time_counter = self.frame_time
                 return None
-
-        video_frame = None
+            
         if self.frame_time_counter == 0:
             rval, video_frame = self.movie.vc.read()
             self.frame_pointer += 1
             self.frame_time_counter = self.frame_time
 
-            if rval is True and video_frame is not None:
-                # self.logger.info("pulling frame %d / %d" % (self.frame_pointer, self.movie.frame_count))
-                video_frame = cv2.cvtColor(video_frame,getColorProp())
-                the_frame = video_frame #tODO: OpenCV3 fix cv.fromarray(video_frame)
-                # surface = pygame.image.frombuffer(the_frame.tostring(), (self.movie.width, self.movie.height), 'RGB')
-                surf = sdl2_DisplayManager.inst().make_texture_from_imagebits(bits=the_frame.tostring(), width=self.movie.width, height=self.movie.height, mode='RGB', composite_op = self.composite_op)
+        if rval is not None:
+            video_frame = cv2.cvtColor(video_frame,cv2.cv.CV_BGR2RGB)
+            the_frame = video_frame
+            # surface = pygame.image.frombuffer(the_frame.tostring(), (self.movie.width, self.movie.height), 'RGB')
+            surf = sdl2_DisplayManager.inst().make_texture_from_imagebits(bits=the_frame.tostring(), width=self.movie.width, height=self.movie.height, mode='RGB', composite_op = None)
 
-                self.frame.pySurface = surf
-            else:
-                # self.logger.info("ERROR OCCURED [%s] [%s]" % (rval, video_frame))
-                # end movie prematurely
-                self.movie.frame_count = self.frame_pointer - 1
-
-
+            self.frame.pySurface = surf
 
         return self.frame
 

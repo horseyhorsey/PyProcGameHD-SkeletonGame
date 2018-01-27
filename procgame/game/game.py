@@ -148,14 +148,15 @@ class GameController(object):
 
     def get_total_time_played_string(self, strTime='00:00:00', addTime = 0):
         """ Returns the total time as a string for saving """      
-        timeToSeconds = self.get_seconds_from_string(strTime)
+        timeToSeconds = self.get_seconds_from_string(strTime)        
         totalSeconds = timeToSeconds + addTime        
         return time.strftime("%X",time.localtime(totalSeconds))  
 
     def get_seconds_from_string(self, strTime):
         """ Converts a time string to seconds """
+        self.log(strTime)
         ftr = [3600,60,1]
-        return sum([a*b for a,b in zip(ftr, map(int,strTime.split(':')))])
+        return sum([a*b for a,b in zip(ftr, map(float,strTime.split(':')))])
 
     def save_ball_start_time(self):
         self.ball_start_time = time.time()

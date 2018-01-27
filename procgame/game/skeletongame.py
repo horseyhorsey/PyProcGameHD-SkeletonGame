@@ -934,9 +934,7 @@ class SkeletonGame(BasicGame):
 
             ply_data['Audits']['Games Played'] += 1
 
-            _ply_total_time = ply_data['Audits']['Total Game Time']
-            _ply_total_time = self.get_total_time_played_string(_ply_total_time, game_time)
-            ply_data['Audits']['Total Game Time'] = _ply_total_time
+            ply_data['Audits']['Total Game Time'] += game_time
 
             ply_data['Audits']['Avg Game Time'] = \
                 self.calc_time_average_string(ply_data['Audits']['Games Played'],
@@ -1060,11 +1058,11 @@ class SkeletonGame(BasicGame):
 
             self.game_data['Audits']['Avg Ball Time'] = self.calc_time_average_string(self.game_data['Audits']['Balls Played'], self.game_data['Audits']['Avg Ball Time'], self.ball_time)
             self.game_data['Audits']['Balls Played'] += 1
+
             longest_ball_time = self.game_data['Audits']['Longest Ball Time']
-            longest_ball_time = self.get_seconds_from_string(longest_ball_time)
             if ball_time_seconds > longest_ball_time:
-                self.game_data['Audits']['Longest Ball Time'] = self.get_total_time_played_string(
-                    addTime=ball_time_seconds)
+                self.game_data['Audits']['Longest Ball Time'] = ball_time_seconds
+
             # can't save here as file might still be open on game end...
             # self.save_game_data('game_user_data.yaml')
 
@@ -1080,10 +1078,8 @@ class SkeletonGame(BasicGame):
 
                     # Add to longest ball time if beaten
                     longest_ball_time = plr_data['Audits']['Longest Ball Time']
-                    longest_ball_time = self.get_seconds_from_string(longest_ball_time)
                     if ball_time_seconds > longest_ball_time:
-                        plr_data['Audits']['Longest Ball Time'] = self.get_total_time_played_string(
-                            addTime=ball_time_seconds)
+                        plr_data['Audits']['Longest Ball Time'] = ball_time_seconds
                     self.logger.info("Updated players profile")
 
         # Remove ball drained logic until the ball is fed into the shooter lane again
@@ -1353,9 +1349,7 @@ class SkeletonGame(BasicGame):
                 self.save_player_trophy(i)
 
         # Increment the total time game played
-        self.logger.info("Skel: Total Game Time: " + str(totalTimePlayed))
-        totalTimePlayedStr = self.get_total_time_played_string(self.game_data['Audits']['Total Game Time'], totalTimePlayed)
-        self.game_data['Audits']['Total Game Time'] = totalTimePlayedStr
+        self.game_data['Audits']['Total Game Time'] += round(totalTimePlayed)
 
         self.save_game_data('game_user_data.yaml')
 

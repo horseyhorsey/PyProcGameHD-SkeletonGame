@@ -1,0 +1,119 @@
+PRGame:
+    machineType: wpc
+    numBalls: 6
+PRFlippers:
+    - flipperLwR
+    - flipperLwL
+    - flipperUpR
+    - flipperUpL
+PRBumpers:
+    - slingL
+    - slingR
+PRSwitches:
+    #   <number> can be: SFx (Flipper switch, labeled Fx in WPC manual
+    #                    SDx (Dedicated switch, labeled SDx in WPC manual
+    #                    Sx  (Matrix switch, labeled x in WPC manual
+    #   <type> can be: 'NO' (normally open.  This is the default; so no need to use this)
+    #                  'NC' (normally closed.  Common for optos)
+    - name: flipperLwR
+      number: SF2
+    - name: flipperLwL
+      number: SF4
+    - name: flipperUpR
+      number: SF6
+    - name: flipperUpL
+      number: SF8
+    - name: exit
+      number: SD5
+    - name: down
+      number: SD6
+    - name: up
+      number: SD7
+    - name: enter
+      number: SD8
+    - name: startButton
+      number: S13
+    - name: outlaneL
+      number: S21
+      tags: early_save
+    - name: outlaneR
+      number: S22
+      tags: early_save
+    - name: slingL
+      number: S51
+    - name: slingR
+      number: S52  
+    - name: shooter_lane
+      number: S41
+      tags: shooter
+#Trough
+    - name: trough1
+      number: S81
+      type: 'NC'
+      tags: trough
+    - name: trough2
+      number: S82
+      type: 'NC'
+      tags: trough
+    - name: trough3
+      number: S83
+      type: 'NC'
+      tags: trough
+    - name: trough4
+      number: S84
+      type: 'NC'
+      tags: trough
+    - name: trough5
+      number: S85
+      type: 'NC'
+      tags: trough
+    - name: trough6
+      number: S86
+      type: 'NC'
+      tags: trough
+    - name: troughTop  
+      number: S87
+      type: 'NC'
+PRCoils:
+    - name: flipperLwRMain
+      number: FLRM
+    - name: flipperLwRHold 
+      number: FLRH
+    - name: flipperLwLMain 
+      number: FLLM
+    - name: flipperLwLHold 
+      number: FLLH
+    - name: flipperUpRMain 
+      number: FURM
+    - name: flipperUpRHold 
+      number: FURH
+    - name: flipperUpLMain
+      number: FULM
+    - name: flipperUpLHold
+      number: FULH
+    - name: trough
+      number: C13
+    - name: slingL 
+      number: C15
+    - name: slingR
+      number: C16
+PRLamps:
+    - name: perp1W
+      number: L11
+    - name: shootAgain
+      number: L12     
+      tags: shoot_again      
+    - name: buyIn
+      number: L87
+    - name: startButton
+      number: L88
+    - name: gi01
+      number: G01
+    - name: gi02
+      number: G02
+    - name: gi03
+      number: G03
+    - name: gi04
+      number: G04
+    - name: gi05
+      number: G05

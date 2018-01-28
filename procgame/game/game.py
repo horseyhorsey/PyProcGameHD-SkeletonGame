@@ -499,6 +499,14 @@ class GameController(object):
             for key, value in template.iteritems():
                 if key not in self.game_data:
                     self.game_data[key] = copy.deepcopy(value)
+
+                # Add any missing values from the template
+                if isinstance(value, dict):
+                    for field, val in value.iteritems():
+                        if field not in self.game_data[key]:
+                            self.game_data[key][field] = copy.deepcopy(val)
+                else:  # We have a list or something..else
+                    pass
     
     def save_game_data(self, filename):
         """Writes the game data to *filename*.  See :meth:`load_game_data`."""

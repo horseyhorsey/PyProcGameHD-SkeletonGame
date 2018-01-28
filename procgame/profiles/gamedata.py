@@ -48,6 +48,14 @@ class GameData(object):
                 if key not in game_data:
                     game_data[key] = copy.deepcopy(value)
 
+                # Add any missing values from the template
+                if isinstance(value, dict):
+                    for field, val in value.iteritems():
+                        if field not in game_data[key]:
+                            game_data[key][field] = copy.deepcopy(val)
+                else:  # We have a list or something..else
+                    pass
+
             return game_data
 
     def _load_data_from_file(self, filename):

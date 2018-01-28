@@ -26,7 +26,7 @@ from ..modes import Trough, ballsave, BallSearch
 from ..modes import osc
 from ..modes import DMDHelper, SwitchMonitor
 from ..modes import bonusmode, service, Attract, TiltMonitorMode, Tilted, ProfileMenu
-from procgame.profiles import ProfileManager, TrophyManager
+from ..profiles import ProfileManager, TrophyManager
 from ..modes.trophymode import TrophyMode
 #from ..modes import serviceHD
 

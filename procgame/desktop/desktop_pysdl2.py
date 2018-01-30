@@ -149,6 +149,13 @@ class Desktop():
                 elif event.key.keysym.sym in self.key_map:
                     key_event['type'] = pinproc.EventTypeSwitchClosedDebounced
                     key_event['value'] = self.key_map[event.key.keysym.sym]
+                # Toggle the window border
+                if event.key.keysym.sym == sdl2.SDLK_F11:
+                    self.window_border = not self.window_border
+                    sdl2_DisplayManager.inst().set_window_border(self.window_border)
+                # Save the windows position to the config.yaml
+                if event.key.keysym.sym == sdl2.SDLK_F12:
+                    self.save_window_position_to_config()
             elif event.type == sdl2.SDL_KEYUP:
                 if event.key.keysym.sym == sdl2.SDLK_LCTRL or event.key.keysym.sym == sdl2.SDLK_RCTRL:
                     self.ctrl = 0
@@ -244,6 +251,15 @@ class Desktop():
         # del tx
         # do python send
 
+    def save_window_position_to_config(self):
+        x = ctypes.c_int(0)
+        y = ctypes.c_int(0)
+        sdl2.SDL_GetWindowPosition(sdl2_DisplayManager.inst().window.window, x, y)
+        self.screen_position_x = x.value
+        self.screen_position_y = y.value
+        config.values['screen_position_x'] = self.screen_position_x
+        config.values['screen_position_y'] = self.screen_position_y
+        config.save()
 
     def __str__(self):
         return '<Desktop pySDL2>'

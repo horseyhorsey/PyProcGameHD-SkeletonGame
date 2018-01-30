@@ -49,4 +49,18 @@ def load():
     except Exception, e:
         logger.error('Error loading pyprocgame config from %s: %s', path, e)
 
+def save():
+    if values is not None:
+        if os.path.exists(path):
+            os.remove(path)
+        else:  # Don't do anything if we can't find the config, even though it should be there
+            return
+
+        # open new stream
+        stream = open(path, 'w')
+
+        # dump the data to file stream
+        yaml.dump(values, stream)
+        file.close(stream)
+
 load()

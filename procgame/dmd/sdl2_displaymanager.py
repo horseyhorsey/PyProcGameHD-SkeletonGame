@@ -163,6 +163,10 @@ class sdl2_DisplayManager(object):
         else:
             self.window.hide()
 
+    def set_window_border(self, border=False):
+        """ Sets the display windows border """
+        sdl2.SDL_SetWindowBordered(self.window.window, border)            
+
     def fonts_init(self, default_font_path, default_font_alias, size=30, color=(0,0,128,255), bgcolor=(0,0,0)):
         from pygame.font import match_font
         font_path = default_font_path or  match_font(default_font_alias)

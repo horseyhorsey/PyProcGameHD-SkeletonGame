@@ -61,6 +61,7 @@ class Desktop():
         self.dmd_soften = config.value_for_key_path(keypath='dmd_soften', default="0")
         self.use_rgb_dmd_device = config.value_for_key_path(keypath='rgb_dmd.enabled', default=False)
         self.dmd_flip = config.value_for_key_path(keypath='dmd_flip', default=0)
+        self.dmd_always_on_top = config.value_for_key_path(keypath='dmd_always_on_top', default=True)
         if(self.use_rgb_dmd_device):
             # turn off dots and scaling, since they are incompatible (at this time) --SDL2 bug.
             self.screen_scale = 1
@@ -181,6 +182,8 @@ class Desktop():
             flags = flags | sdl2.SDL_WINDOW_FULLSCREEN
         if(self.window_border is False):
             flags = flags | sdl2.SDL_WINDOW_BORDERLESS
+        if self.dmd_always_on_top:
+            flags = flags | sdl2.SDL_WINDOW_ALWAYS_ON_TOP
 
         sdl2_DisplayManager.Init(self.dots_w, self.dots_h, self.screen_scale,  "SkeletonGame/PyProcGameHD  [ESC to exit]", self.screen_position_x,self.screen_position_y, flags, self.dmd_soften)
         sdl2_DisplayManager.inst().fonts_init(None,"Courier")

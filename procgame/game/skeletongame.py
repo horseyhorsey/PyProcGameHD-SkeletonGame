@@ -114,7 +114,8 @@ class SkeletonGame(BasicGame):
             random.seed()
 
             audio_buffer_size = config.value_for_key_path('audio_buffer_size', 512)
-            pygame.mixer.pre_init(44100,-16,2, audio_buffer_size)
+            audio_freq_rate = config.value_for_key_path('audio_freq_rate', 22050)
+            pygame.mixer.pre_init(audio_freq_rate,-16,2, audio_buffer_size)
 
             self.curr_file_path = curr_file_path
 
@@ -198,7 +199,7 @@ class SkeletonGame(BasicGame):
             self.game_tilted = False # indicates if any kind of tilt has occured; tilt, slam_tilt
 
             # create a sound controller (self.game.sound from within modes)
-            self.sound = sound.SoundController(self, buffer_size = audio_buffer_size)
+            self.sound = sound.SoundController(self, frequency=audio_freq_rate, buffer_size=audio_buffer_size)
             self.modes.add(self.sound)
 
             self.settings = []

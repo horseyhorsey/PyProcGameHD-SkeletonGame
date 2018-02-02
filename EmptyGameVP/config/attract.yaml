@@ -24,7 +24,7 @@ Sequence:
         duration: 2.0
         flashing: True
         #sound: intro
-        Message:           
+        TextOptions:           
           - Text: 
             - ""
             - ""

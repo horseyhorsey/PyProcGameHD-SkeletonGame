@@ -324,7 +324,7 @@ class DMDHelper(Mode):
                 flashing = value_for_key(v, 'flashing')
 
                 (fnt, font_style) = self.parse_font_data(v, required=False)
-                msg = value_for_key(v, 'Message')
+                msg = value_for_key(v, 'TextOptions')
 
                 if(msg is None):
                     self.logger.warning("Processing YAML, Combo section contains no 'Text' tag.  Consider using Animation instead.")

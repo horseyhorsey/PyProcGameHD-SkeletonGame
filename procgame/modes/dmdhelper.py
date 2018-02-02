@@ -8,6 +8,7 @@ from ..dmd import HDTextLayer
 from ..dmd import HDFont
 from ..dmd import RandomizedLayer
 from ..dmd import AnimatedLayer
+from ..dmd import ScriptlessLayer
 from procgame.yaml_helper import value_for_key
 import yaml
 
@@ -313,6 +314,56 @@ class DMDHelper(Mode):
 
                 if(len(rndmLayers) > 0):
                     lyrTmp = RandomizedLayer(layers=rndmLayers)
+            elif 'ScriptedText' in yamlStruct:
+                v = yamlStruct['ScriptedText']
+
+                duration = value_for_key(v, 'duration', 1.0)
+                lampshow = value_for_key(v, 'lampshow')
+                sound = value_for_key(v, 'sound')
+                anim = value_for_key(v, 'Animation')
+                flashing = value_for_key(v, 'flashing')
+
+                (fnt, font_style) = self.parse_font_data(v, required=False)
+                msg = value_for_key(v, 'Message')
+
+                if(msg is None):
+                    self.logger.warning("Processing YAML, Combo section contains no 'Text' tag.  Consider using Animation instead.")
+
+                # Create scriptless_text from lines in list
+                sl = ScriptlessLayer(self.game.dmd.width, self.game.dmd.height)
+                totalDuration = 0.0  # Total up the text layers created
+
+                # All Text objects in yaml Message
+                for msgs in msg:
+                    msgList = []
+                    for line in msgs['Text']:
+                        msgList.append(line)
+
+                    #  Generate layer from the text lines, append and add duration
+                    frames = self.genMsgFrame(msgList, font_style=font_style, font_key=fnt, flashing=flashing)
+
+                    #  If all lines in text are None then create a None layer (instead of creating empty frames)
+                    if len(frames.layers) > 0:
+                        sl.append(frames, duration)
+                    else:
+                        sl.append(None, duration)
+
+                    totalDuration += duration
+
+                # add total duration and create the layer
+                duration = totalDuration
+                animLoaded = self.game.animations[anim]
+                anim_duration = animLoaded.duration()
+                if anim_duration > 2.0:
+                    duration = anim_duration
+
+                # Fill up the Non if rest of the text is none.
+                if totalDuration > anim_duration:
+                    duration = totalDuration
+                elif totalDuration < anim_duration:
+                    sl.append(None, (totalDuration - duration))
+
+                lyrTmp = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, layers=[animLoaded, sl])
             else:
                 lyrTmp = self.generateLayerFromYaml(yamlStruct) # not sure what this is, let the other method parse it
                 v = yamlStruct[yamlStruct.keys()[0]]    # but we reach in and grab it to pull duration, lampshow and sound.
@@ -493,7 +544,6 @@ class DMDHelper(Mode):
 
                 frm = gen.frame_for_markup(txt)
                 new_layer = dmd.FrameLayer(frame=frm)
-
             else:
                 unknown_tag = None
                 if(yaml_struct is not None and len(yaml_struct.keys())>0):

@@ -23,6 +23,7 @@ class DMDHelper(Mode):
         self.msgfont = self.game.fonts['default']
 
         self.game.status_font_name = 'status_font'
+        self.prev_layer = None
 
         if('status_font_style' in self.game.fontstyles):
             self.game.status_font_style = 'status_font_style'
@@ -290,7 +291,10 @@ class DMDHelper(Mode):
                 multiple_screens = value_for_key(v, 'multiple_screens', False)
 
                 lyrTmp = dmd.LastScoresLayer(self.game, multiple_screens, fnt, font_style, background, duration)
+
+                self.prev_layer = None
                 duration = lyrTmp.get_duration()
+
 
             elif('RandomText' in yamlStruct):
                 v = yamlStruct['RandomText']
@@ -322,6 +326,10 @@ class DMDHelper(Mode):
                 sound = value_for_key(v, 'sound')
                 anim = value_for_key(v, 'Animation')
                 flashing = value_for_key(v, 'flashing')
+                transition = value_for_key(v, 'transition', None)
+                transition_param = value_for_key(v, 'transition_param', None)
+                transition_length = value_for_key(v, 'trans_length', 5)
+
 
                 (fnt, font_style) = self.parse_font_data(v, required=False)
                 msg = value_for_key(v, 'TextOptions')
@@ -344,7 +352,11 @@ class DMDHelper(Mode):
 
                     #  If all lines in text are None then create a None layer (instead of creating empty frames)
                     if len(frames.layers) > 0:
-                        sl.append(frames, duration)
+                        if transition is not None:  # Add a transition to the layer
+                            tl = dmd.TransitionLayer(None, frames, transitionType=transition, transitionParameter=transition_param, lengthInFrames=transition_length)
+                            sl.append(tl, duration)
+                        else:
+                            sl.append(frames, duration)
                     else:
                         sl.append(None, duration)
 
@@ -364,6 +376,12 @@ class DMDHelper(Mode):
                     sl.append(None, (totalDuration - duration))
 
                 lyrTmp = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, layers=[animLoaded, sl])
+
+                if transition is not None:
+                    lyrTmp = dmd.TransitionLayer(self.prev_layer, lyrTmp, transitionType=transition,
+                                         transitionParameter=transition_param, lengthInFrames=transition_length)
+
+                self.prev_layer = lyrTmp
             else:
                 lyrTmp = self.generateLayerFromYaml(yamlStruct) # not sure what this is, let the other method parse it
                 v = yamlStruct[yamlStruct.keys()[0]]    # but we reach in and grab it to pull duration, lampshow and sound.
@@ -385,7 +403,6 @@ class DMDHelper(Mode):
     def generateLayerFromYaml(self, yaml_struct):
         """ a helper to generate Display Layers given properly formatted YAML """
         new_layer = None
-
         if(yaml_struct is None or (isinstance(yaml_struct,basestring) and yaml_struct=='None')):
             return None
 
@@ -403,6 +420,16 @@ class DMDHelper(Mode):
                     self.logger.warning("Processing YAML, Combo section contains no 'Text' tag.  Consider using Animation instead.")
 
                 new_layer = self.genMsgFrame(msg, value_for_key(v,'Animation'), font_key=fnt, font_style=font_style)
+
+                transition = value_for_key(v, 'transition', None)
+                trans_length = value_for_key(v, 'trans_length', None)
+                trans_param = value_for_key(v, 'trans_param', None)
+
+                if transition is not None:
+                    new_layer = dmd.TransitionLayer(self.prev_layer, new_layer, transitionType=transition, transitionParameter=trans_param,
+                                         lengthInFrames=trans_length)
+
+                self.prev_layer = new_layer
 
             elif ('Animation' in yaml_struct):
                 v = yaml_struct['Animation']
@@ -464,6 +491,9 @@ class DMDHelper(Mode):
                 contents = value_for_key(v,'contents', exception_on_miss=True)
                 opaque = value_for_key(v, 'opaque', None)
                 fill_color = value_for_key(v, 'fill_color', None)
+                transition = value_for_key(v, 'transition', None)
+                trans_length = value_for_key(v, 'trans_length', None)
+                trans_param = value_for_key(v, 'trans_param', None)
 
                 lyrs = []
 
@@ -482,6 +512,12 @@ class DMDHelper(Mode):
                 if(opaque):
                     new_layer.opaque = opaque
                 new_layer.set_target_position(x, y)
+
+                if transition is not None:
+                    new_layer = dmd.TransitionLayer(self.prev_layer, new_layer, transitionType=transition, transitionParameter=trans_param,
+                                         lengthInFrames=trans_length)
+
+                self.prev_layer = new_layer
 
             elif('animation_layer' in yaml_struct):
                 v = yaml_struct['animation_layer']
@@ -544,6 +580,15 @@ class DMDHelper(Mode):
 
                 frm = gen.frame_for_markup(txt)
                 new_layer = dmd.FrameLayer(frame=frm)
+
+                transition = value_for_key(v, 'transition', None)
+                trans_length = value_for_key(v, 'trans_length', None)
+                trans_param = value_for_key(v, 'trans_param', None)
+                if transition is not None:
+                    new_layer = dmd.TransitionLayer(self.prev_layer, new_layer, transitionType=transition, transitionParameter=trans_param,
+                                         lengthInFrames=trans_length)
+
+                self.prev_layer = new_layer
             else:
                 unknown_tag = None
                 if(yaml_struct is not None and len(yaml_struct.keys())>0):
@@ -556,6 +601,5 @@ class DMDHelper(Mode):
                 current_tag = yaml_struct.keys()[0]
             self.logger.critical("YAML processing failure occured within tag '%s' of yaml section: \n'%s'" % (current_tag,yaml_struct))
             raise e
-
 
         return new_layer

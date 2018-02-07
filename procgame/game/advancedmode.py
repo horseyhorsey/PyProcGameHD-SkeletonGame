@@ -73,3 +73,27 @@ class AdvancedMode(Mode):
     def force_event_next(self):
         self.game.notifyNextModeNow(self)
 
+    def play_sequence(self, key, mute_sound=False, mute_lamps=False):
+
+        if key in self.game.generated_sequences:
+
+            self.cancel_delayed('clear_layer')
+            generatedSeq = self.game.generated_sequences[key]
+
+            if generatedSeq is not None:
+
+                generatedSeq.layer.reset()
+                self.layer = generatedSeq.layer
+
+                if not mute_sound and generatedSeq.sound is not None:
+                    self.game.sound.play(generatedSeq.sound)
+
+                if not mute_lamps and generatedSeq.lampshow is not None:
+                    self.game.lampctrl.play_show(generatedSeq.lampshow)
+
+                self.delay("clear_layer", None, generatedSeq.duration, self.clear_layer)
+        else:
+            self.game.logger.debug("Couldn't find generated sequence for the given key : {}".format(key))
+
+    def clear_layer(self):
+        self.layer = None

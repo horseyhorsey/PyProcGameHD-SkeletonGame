@@ -75,7 +75,7 @@ class DMDHelper(Mode):
                 if type(msg) is int:
                     msg = str(msg)
                 else:
-                    msg = msg.decode('ascii', 'ignore')                
+                    msg = msg.decode('ascii', 'ignore')
             t = dmd.HDTextLayer(self.game.dmd.width/2, self.game.dmd.height/2, font, "center",  vert_justify="center",opaque=False, width=self.game.dmd.width, height=100,line_color=font_style.line_color, line_width=font_style.line_width, interior_color=font_style.interior_color,fill_color=font_style.fill_color).set_text(msg, blink_frames=flashing)
 
         if(background_layer is None):
@@ -249,6 +249,7 @@ class DMDHelper(Mode):
         lampshow = None
         sound = None
         lyrTmp = None
+        name = None
         v = None
         try:
             if ('HighScores' in yamlStruct):
@@ -386,6 +387,7 @@ class DMDHelper(Mode):
                 lyrTmp = self.generateLayerFromYaml(yamlStruct) # not sure what this is, let the other method parse it
                 v = yamlStruct[yamlStruct.keys()[0]]    # but we reach in and grab it to pull duration, lampshow and sound.
                 duration = value_for_key(v,'duration',None)
+                name = value_for_key(v, 'Name', None)
 
             if(v is not None):
                 lampshow = value_for_key(v, 'lampshow')
@@ -398,7 +400,7 @@ class DMDHelper(Mode):
             self.logger.critical("YAML processing failure occured within tag '%s' of yaml section: \n'%s'" % (current_tag,yamlStruct))
             raise e
 
-        return (lyrTmp, duration, lampshow, sound)
+        return (lyrTmp, duration, lampshow, sound, name)
 
     def generateLayerFromYaml(self, yaml_struct):
         """ a helper to generate Display Layers given properly formatted YAML """
@@ -488,6 +490,7 @@ class DMDHelper(Mode):
                 w = self.__parse_relative_num(v, 'width', self.game.dmd.width, None)
                 h = self.__parse_relative_num(v, 'height', self.game.dmd.height, None)
 
+                name = value_for_key(v, 'Name', None)
                 contents = value_for_key(v,'contents', exception_on_miss=True)
                 opaque = value_for_key(v, 'opaque', None)
                 fill_color = value_for_key(v, 'fill_color', None)
@@ -587,6 +590,32 @@ class DMDHelper(Mode):
                 if transition is not None:
                     new_layer = dmd.TransitionLayer(self.prev_layer, new_layer, transitionType=transition, transitionParameter=trans_param,
                                          lengthInFrames=trans_length)
+
+                self.prev_layer = new_layer
+            elif ('move_layer' in yaml_struct):
+
+                v = yaml_struct['move_layer']
+
+                (fnt, font_style) = self.parse_font_data(v, required=False)
+                msg = value_for_key(v,'Text')
+                if(msg is None):
+                    msg = []
+
+                start_x = value_for_key(v, 'start_x', 0)
+                start_y = value_for_key(v, 'start_y', 0)
+                targ_x = value_for_key(v, 'target_x', None)
+                targ_y = value_for_key(v, 'target_y', None)
+                frames = value_for_key(v, 'frames', 10)
+                loop = value_for_key(v, 'loop', False)
+                move_txt = value_for_key(v, 'move_text', True)
+                move_anim = value_for_key(v, 'move_anim', False)
+
+                anim_layer = self.genMsgFrame(msg, value_for_key(v,'Animation'), font_key=fnt, font_style=font_style)
+
+                if move_anim:
+                    new_layer = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, [dmd.moveLayer(anim_layer, start_x, start_y, targ_x, targ_y, frames,loop=loop)])
+                else:
+                    new_layer = anim_layer
 
                 self.prev_layer = new_layer
             else:

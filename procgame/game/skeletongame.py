@@ -109,12 +109,15 @@ class SkeletonGame(BasicGame):
         self.profile_manager = None
         self.trophy_manager = None
 
+        self.generated_sequences = {}
+        """ Holds all the loaded sequences """
+
         try:
             self.cleaned_up = False
             random.seed()
 
-            audio_buffer_size = config.value_for_key_path('audio_buffer_size', 512)
             audio_freq_rate = config.value_for_key_path('audio_freq_rate', 22050)
+            audio_buffer_size = config.value_for_key_path('audio_buffer_size', 512)
             pygame.mixer.pre_init(audio_freq_rate,-16,2, audio_buffer_size)
 
             self.curr_file_path = curr_file_path
@@ -386,6 +389,8 @@ class SkeletonGame(BasicGame):
             if(self.use_stock_attractmode):
                 start_lamp = self.lamps.item_named_or_tagged('start_button')
                 self.attract_mode = Attract(game=self, start_button_lamp=start_lamp)
+            else:
+                self.attract_mode = None
 
         except Exception, e:
             if(hasattr(self,'osc') and self.osc is not None):
@@ -811,7 +816,8 @@ class SkeletonGame(BasicGame):
         self.modes.add(self.switchmonitor)
 
     def start_attract_mode(self):
-        self.modes.add(self.attract_mode) # plays the attract mode and kicks off the game
+        if (self.attract_mode != None):
+            self.modes.add(self.attract_mode) # plays the attract mode and kicks off the game
 
 
     def enable_alphanumeric_flippers(self, enable):
@@ -984,7 +990,28 @@ class SkeletonGame(BasicGame):
     def load_skipped_asset(self, assetkey):
         anim = self.skipped_animations[assetkey]
         if (anim != ""):
-            return self.asset_mgr.load_skipped_anim(anim)        
+            return self.asset_mgr.load_skipped_anim(anim)
+
+    def generate_sequences(self, yaml_file):
+        """ Parses a yaml file with sequences and adds to the generated_sequences dict """
+        try:
+            self.sequences = yaml.load(open(yaml_file, 'r'))
+        except yaml.scanner.ScannerError, e:
+            self.logger.debug('Attract mode: Error loading yaml file from %s; the file has a syntax error in it!\nDetails: %s' % (yaml_file, e))
+            raise
+        except Exception, e:
+            self.logger.debug('Attract mode: Error loading yaml file from %s: %s' % (yaml_file, e))
+            raise
+
+        for s in self.sequences['Sequence']:
+            layer_data = self.genLayerFromYAML(s)
+            (lyrTmp, duration, lampshow, sound, name) = layer_data
+
+            if name is not None:
+                seq = Sequence(lyrTmp, sound, lampshow, duration)
+                self.generated_sequences[name] = seq
+            else:
+                self.logger.debug("Name cannot be empty when adding from a Sequence file.")
 
     def load_volume(self):
         try:
@@ -1498,6 +1525,26 @@ class SGEvent(object):
         self.args = evt_args
         self.on_complete_fn = on_complete_fn
         self.only_active_modes = only_active_modes
+
+class Sequence(object):
+
+    layer = None
+    """the layer, animation, text, etc"""
+
+    sound = None
+    """ the sound """
+
+    lampshow = None
+    """ The lampshow to play in sequence"""
+
+    duration = 2.0
+    """ The duration to play"""
+
+    def __init__(self, lyr, snd, lmp, duration):
+        self.layer = lyr
+        self.sound = snd
+        self.lampshow = lmp
+        self.duration = duration
 
 class AdvPlayer(Player):
     """Represents a player in the game.

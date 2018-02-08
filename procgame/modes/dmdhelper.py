@@ -379,10 +379,8 @@ class DMDHelper(Mode):
                 lyrTmp = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, layers=[animLoaded, sl])
 
                 if transition is not None:
-                    lyrTmp = dmd.TransitionLayer(self.prev_layer, lyrTmp, transitionType=transition,
+                    lyrTmp = dmd.TransitionLayer(None, lyrTmp, transitionType=transition,
                                          transitionParameter=transition_param, lengthInFrames=transition_length)
-
-                self.prev_layer = lyrTmp
             else:
                 lyrTmp = self.generateLayerFromYaml(yamlStruct) # not sure what this is, let the other method parse it
                 v = yamlStruct[yamlStruct.keys()[0]]    # but we reach in and grab it to pull duration, lampshow and sound.
@@ -428,10 +426,8 @@ class DMDHelper(Mode):
                 trans_param = value_for_key(v, 'trans_param', None)
 
                 if transition is not None:
-                    new_layer = dmd.TransitionLayer(self.prev_layer, new_layer, transitionType=transition, transitionParameter=trans_param,
+                    new_layer = dmd.TransitionLayer(None, new_layer, transitionType=transition, transitionParameter=trans_param,
                                          lengthInFrames=trans_length)
-
-                self.prev_layer = new_layer
 
             elif ('Animation' in yaml_struct):
                 v = yaml_struct['Animation']
@@ -517,10 +513,8 @@ class DMDHelper(Mode):
                 new_layer.set_target_position(x, y)
 
                 if transition is not None:
-                    new_layer = dmd.TransitionLayer(self.prev_layer, new_layer, transitionType=transition, transitionParameter=trans_param,
+                    new_layer = dmd.TransitionLayer(None, new_layer, transitionType=transition, transitionParameter=trans_param,
                                          lengthInFrames=trans_length)
-
-                self.prev_layer = new_layer
 
             elif('animation_layer' in yaml_struct):
                 v = yaml_struct['animation_layer']
@@ -588,7 +582,7 @@ class DMDHelper(Mode):
                 trans_length = value_for_key(v, 'trans_length', None)
                 trans_param = value_for_key(v, 'trans_param', None)
                 if transition is not None:
-                    new_layer = dmd.TransitionLayer(self.prev_layer, new_layer, transitionType=transition, transitionParameter=trans_param,
+                    new_layer = dmd.TransitionLayer(None, new_layer, transitionType=transition, transitionParameter=trans_param,
                                          lengthInFrames=trans_length)
 
                 self.prev_layer = new_layer

@@ -612,6 +612,20 @@ class DMDHelper(Mode):
                     new_layer = anim_layer
 
                 self.prev_layer = new_layer
+            elif ('zoom_layer' in yaml_struct):
+
+                v = yaml_struct['zoom_layer']
+
+                (fnt, font_style) = self.parse_font_data(v, required=False)
+
+                hold = value_for_key(v, 'hold', False)
+                frames_per_zoom = value_for_key(v, 'frames_per_zoom', 1)
+                scale_start = value_for_key(v, 'scale_start', 1.0)
+                scale_stop = value_for_key(v, 'scale_stop', 2.0)
+                total_zooms = value_for_key(v, 'total_zooms', 30)
+
+                anim_layer = self.genMsgFrame(None, value_for_key(v,'Animation'), font_key=fnt, font_style=font_style)
+                new_layer = dmd.ZoomingLayer(anim_layer, hold, frames_per_zoom, scale_start, scale_stop, total_zooms)                
             else:
                 unknown_tag = None
                 if(yaml_struct is not None and len(yaml_struct.keys())>0):

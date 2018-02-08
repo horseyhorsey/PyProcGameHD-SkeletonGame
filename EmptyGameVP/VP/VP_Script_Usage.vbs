@@ -38,14 +38,122 @@ Sub LoadVPM(VBSfile, VBSver)
 	
 End Sub
 
+ Dim bsTrough 'The trough object'
+ SolCallback(13) = "Soltrough"
+
+ Sub Table1_init()
+  
+  With Controller
+       .GameName=cGameName
+       If Err Then MsgBox "Can't start Game" & cGameName & vbNewLine & Err.Description : Exit Sub
+       .SplashInfoLine="****GAMENAME******" & vbNewLine & "P-ROC by *********"
+       .HandleKeyboard=0
+       .ShowTitle=0
+       .ShowDMDOnly=1
+       .ShowFrame=0
+       .HandleMechanics=0
+       '.Hidden=1
+       '.SetDisplayPosition 1600, 1600, GetPlayerHWnd
+       On Error Resume Next
+       .Run GetPlayerHWnd
+       If Err Then MsgBox Err.Description
+    End With
+ 
+    On Error Goto 0
+
+  VpmInit me
+
+    ' Trough    
+    Set bsTrough=New cvpmBallStack
+    bsTrough.InitSw 0,84,83,82,81,0,0,0
+    bsTrough.InitKick BallRelease, 80, 6
+    bsTrough.InitEntrySnd "Solenoid", "Solenoid"
+    bsTrough.InitExitSnd "ballrel", "Solenoid"
+    bsTrough.Balls=4
+
+    ' Main Timer init
+    PinMAMETimer.Interval=PinMAMEInterval
+    PinMAMETimer.Enabled=1
+
+    vpmCreateEvents AllSwitches
+
+    'Initialize plungers
+    Plunger.PullBack
+    'KickBack.PullBack
+
+ End Sub
+
+'################
+'# Flippers
+'###############
+
+SolCallback(sLRFlipper) = "SolRFlipper"
+SolCallback(sLLFlipper) = "SolLFlipper"
+
+Sub SolLFlipper(Enabled)    
+    If Enabled Then
+        PlaySound "flipUpSound", 0, 1, -0.1, 0.25
+        LeftFlipper.RotateToEnd
+    Else        
+        PlaySound "flipDownSound", 0, 1, -0.1, 0.25
+        LeftFlipper.RotateToStart
+    End If
+End Sub
+
+Sub SolRFlipper(Enabled)
+    Dim tmp, tmp2
+    If Enabled Then
+        PlaySound "flipUpSound", 0, 1, 0.1, 0.25
+        RightFlipper.RotateToEnd
+    Else        
+        PlaySound "flipDownSound", 0, 1, 0.1, 0.25
+        RightFlipper.RotateToStart
+    End If
+End Sub
+
+'###############
+' GAME SWITCHES
+'###############
+
+' shooter_lane hit 
+Sub sw41_Hit():Controller.Switch(41) = 1:End Sub
+Sub sw41_UnHit():Controller.Switch(41) = 0:End Sub
+
+Sub Drain_Hit() 
+  Me.DestroyBall
+  bsTrough.AddBall Me  
+End Sub
+
+Sub Soltrough(Enabled)
+  If enabled Then
+    If bsTrough.Balls Then
+      PlaySound "BallRelease"
+    End If
+
+    bsTrough.ExitSol_On
+  End If
+End Sub
+
 '**********
 ' Keys
 '**********
  Sub Table1_KeyDown(ByVal Keycode)    
+
+  If keycode = PlungerKey Then
+    Plunger.PullBack
+    PlaySound "plungerpull",0,1,AudioPan(Plunger),0.25,0,0,1,AudioFade(Plunger)
+  End If
+
   If vpmKeyDown(keycode) Then Exit Sub
  End Sub
 
  Sub Table1_KeyUp(ByVal Keycode)
+
+  If keycode = PlungerKey Then
+    Plunger.Fire
+    PlaySound "plunger",0,1,AudioPan(Plunger),0.25,0,0,1,AudioFade(Plunger)
+  End If
+
     If vpmKeyUp(keycode) Then Exit Sub
  End Sub
 

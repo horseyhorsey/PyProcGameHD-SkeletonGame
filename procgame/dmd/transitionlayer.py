@@ -51,7 +51,7 @@ class moveLayer(Layer):
     def reset(self):
         self.step_number = 0
         self.finished = False
-        
+        self.object_layer.reset()
 
 class TransitionLayer(Layer):
 

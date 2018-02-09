@@ -278,6 +278,7 @@ class DMDHelper(Mode):
                 # duration = entry_ct*duration
                 lyrTmp = dmd.ScoresLayer(self.game, fields, fnt, font_style, background, duration)
                 duration = lyrTmp.get_duration()
+
             elif('LastScores' in yamlStruct):
                 v = yamlStruct['LastScores']
 
@@ -294,7 +295,6 @@ class DMDHelper(Mode):
                 lyrTmp = dmd.LastScoresLayer(self.game, multiple_screens, fnt, font_style, background, duration)
 
                 duration = lyrTmp.get_duration()
-
             elif('RandomText' in yamlStruct):
                 v = yamlStruct['RandomText']
                 (fnt, font_style) = self.parse_font_data(v, required=False)
@@ -317,6 +317,10 @@ class DMDHelper(Mode):
 
                 if(len(rndmLayers) > 0):
                     lyrTmp = RandomizedLayer(layers=rndmLayers)
+
+                # Apply any transformations
+                lyrTmp = self.apply_transforms(lyrTmp, v)
+
             elif 'ScriptedText' in yamlStruct:
                 v = yamlStruct['ScriptedText']
 
@@ -479,6 +483,9 @@ class DMDHelper(Mode):
 
                 new_layer = self.genMsgFrame(msg, value_for_key(v,'Animation'), font_key=fnt, font_style=font_style)
 
+				# Apply transforms
+				new_layer = self.apply_transforms(new_layer, v)
+
                 transition = value_for_key(v, 'transition', None)
                 trans_length = value_for_key(v, 'trans_length', None)
                 trans_param = value_for_key(v, 'trans_param', None)
@@ -486,7 +493,7 @@ class DMDHelper(Mode):
                 if transition is not None:
                     new_layer = dmd.TransitionLayer(None, new_layer, transitionType=transition, transitionParameter=trans_param,
                                          lengthInFrames=trans_length)
-
+                
             elif ('Animation' in yaml_struct):
                 v = yaml_struct['Animation']
 
@@ -581,9 +588,11 @@ class DMDHelper(Mode):
                     new_layer.opaque = opaque
                 new_layer.set_target_position(x, y)
 
+				new_layer = self.apply_transforms(new_layer, v)
+
                 if transition is not None:
                     new_layer = dmd.TransitionLayer(None, new_layer, transitionType=transition, transitionParameter=trans_param,
-                                         lengthInFrames=trans_length)
+                                         lengthInFrames=trans_length)                
 
             elif('animation_layer' in yaml_struct):
                 v = yaml_struct['animation_layer']

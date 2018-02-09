@@ -398,6 +398,21 @@ class DMDHelper(Mode):
 
         return (lyrTmp, duration, lampshow, sound, name)
 
+    def apply_transforms(self, layer, yaml_dict):
+
+        # Apply Zoom
+        if (value_for_key(yaml_dict, 'zoom_layer') is not None):
+            layer = self.apply_zoom(layer, yaml_dict['zoom_layer'])
+
+        # Apply Rotation
+        if (value_for_key(yaml_dict, 'rotate_layer') is not None):
+            layer = self.apply_rotation(layer, yaml_dict['rotate_layer'])
+
+        if (value_for_key(yaml_dict, 'move_layer') is not None):
+            layer = self.apply_move(layer, yaml_dict['move_layer'])
+
+        return layer
+
     def apply_zoom(self, layer, zoom_dict):
         """ Applys zoom to a layer from zoom_dict values """
 
@@ -595,13 +610,7 @@ class DMDHelper(Mode):
                 new_layer.reset()
                 new_layer.set_target_position(x, y)
 
-                # Apply Zoom
-                if(value_for_key(v, 'zoom_layer') is not None):
-                    new_layer = self.apply_zoom(new_layer, v['zoom_layer'])
-
-                # Apply Rotation
-                if (value_for_key(v, 'rotate_layer') is not None):
-                    new_layer = self.apply_rotation(new_layer, v['rotate_layer'])
+                new_layer = self.apply_transforms(new_layer, v)
 
             elif ('text_layer' in yaml_struct):
                 v = yaml_struct['text_layer']
@@ -621,9 +630,7 @@ class DMDHelper(Mode):
                 if(h is None):
                     new_layer.height = new_layer.text_height
 
-                # Apply Zoom
-                if(value_for_key(v, 'zoom_layer') is not None):
-                    new_layer = self.apply_zoom(new_layer, v['zoom_layer'])
+                new_layer = self.apply_transforms(new_layer, v)
 
                 # fill_color = value_for_key(v,'fill_color',(0,0,0))
 

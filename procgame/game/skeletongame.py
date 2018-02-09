@@ -234,10 +234,16 @@ class SkeletonGame(BasicGame):
             self.use_player_trophys = config.value_for_key_path('default_modes.player_trophys', False)
 
             self.dmdHelper = DMDHelper(game=self)
+            self.genLayerFromYAML = self.dmdHelper.genLayerFromYAML
             self.modes.add(self.dmdHelper)
 
+            # Get pre made sequences
+            sequence_file = 'config/sequences.yaml'
+            if os.path.exists(sequence_file):
+                self.generate_sequences(yaml_file=sequence_file)
+
             if(self.use_stock_scoredisplay is True):
-                self.score_display = ScoreDisplay(self,0)
+                self.score_display = ScoreDisplay(self, 0)
             elif(self.use_stock_scoredisplay=='HD'):
                 self.score_display = ScoreDisplayHD(self, 0)
 
@@ -380,8 +386,6 @@ class SkeletonGame(BasicGame):
             self.modes.add(self.switchmonitor)
 
             # # call reset (to reset the machine/modes/etc)
-
-            self.genLayerFromYAML = self.dmdHelper.genLayerFromYAML
 
             self.notify_list = None
             self.curr_delayed_by_mode = None

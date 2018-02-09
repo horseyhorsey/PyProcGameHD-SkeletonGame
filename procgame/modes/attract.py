@@ -41,7 +41,7 @@ class Attract(Mode):
                 if(layer_data is None):
                     continue
 
-                (lyrTmp, duration, lampshow, sound) = layer_data
+                (lyrTmp, duration, lampshow, sound, name) = layer_data
 
                 cb = None
                 if(lampshow is not None and sound is not None):

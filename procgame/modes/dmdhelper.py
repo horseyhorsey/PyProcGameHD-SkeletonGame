@@ -482,10 +482,8 @@ class DMDHelper(Mode):
                     self.logger.warning("Processing YAML, Combo section contains no 'Text' tag.  Consider using Animation instead.")
 
                 new_layer = self.genMsgFrame(msg, value_for_key(v,'Animation'), font_key=fnt, font_style=font_style)
-
-				# Apply transforms
-				new_layer = self.apply_transforms(new_layer, v)
-
+                # Apply transforms
+                new_layer = self.apply_transforms(new_layer, v)
                 transition = value_for_key(v, 'transition', None)
                 trans_length = value_for_key(v, 'trans_length', None)
                 trans_param = value_for_key(v, 'trans_param', None)
@@ -588,7 +586,7 @@ class DMDHelper(Mode):
                     new_layer.opaque = opaque
                 new_layer.set_target_position(x, y)
 
-				new_layer = self.apply_transforms(new_layer, v)
+                new_layer = self.apply_transforms(new_layer, v)
 
                 if transition is not None:
                     new_layer = dmd.TransitionLayer(None, new_layer, transitionType=transition, transitionParameter=trans_param,

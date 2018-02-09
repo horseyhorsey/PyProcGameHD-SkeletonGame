@@ -293,9 +293,7 @@ class DMDHelper(Mode):
 
                 lyrTmp = dmd.LastScoresLayer(self.game, multiple_screens, fnt, font_style, background, duration)
 
-                self.prev_layer = None
                 duration = lyrTmp.get_duration()
-
 
             elif('RandomText' in yamlStruct):
                 v = yamlStruct['RandomText']
@@ -400,6 +398,51 @@ class DMDHelper(Mode):
 
         return (lyrTmp, duration, lampshow, sound, name)
 
+    def apply_zoom(self, layer, zoom_dict):
+        """ Applys zoom to a layer from zoom_dict values """
+
+        enabled = value_for_key(zoom_dict, 'enabled', False)
+        if not enabled:
+            return layer
+
+        hold = value_for_key(zoom_dict, 'hold', False)
+        start = value_for_key(zoom_dict, 'scale_start', 0.1)
+        stop = value_for_key(zoom_dict, 'scale_stop', 1.0)
+        total_zooms = value_for_key(zoom_dict, 'total_zooms', 30)
+        frames_per_zoom = value_for_key(zoom_dict, 'frames_per_zoom', 1)
+
+        return dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, [dmd.ZoomingLayer(layer, hold, frames_per_zoom, start, stop, total_zooms)])
+
+    def apply_rotation(self, layer, rotate_dict):
+
+        enabled = value_for_key(rotate_dict, 'enabled', False)
+        if not enabled:
+            return layer
+
+        x = value_for_key(rotate_dict, 'x', 0)
+        y = value_for_key(rotate_dict, 'y', 0)
+        rotation_update = value_for_key(rotate_dict, 'rotation_update', 10)
+
+        group = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height,[layer])
+        return dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height,
+                                [dmd.RotationLayer(x, y, rotation_update, group)])
+
+    def apply_move(self, layer, move_dict):
+
+        enabled = value_for_key(move_dict, 'enabled', False)
+        if not enabled:
+            return layer
+
+        sx = value_for_key(move_dict, 'start_x', 0)
+        sy = value_for_key(move_dict, 'start_y', 0)
+        tx = value_for_key(move_dict, 'target_x', 0)
+        ty = value_for_key(move_dict, 'target_y', 0)
+        frames = value_for_key(move_dict, 'frames', 15)
+        loop = value_for_key(move_dict, 'loop', False)
+
+        return dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height,
+                                [dmd.moveLayer(layer, sx,sy, tx, ty, frames , loop=loop)])
+
     def generateLayerFromYaml(self, yaml_struct):
         """ a helper to generate Display Layers given properly formatted YAML """
         new_layer = None
@@ -432,11 +475,22 @@ class DMDHelper(Mode):
             elif ('Animation' in yaml_struct):
                 v = yaml_struct['Animation']
 
-                new_layer = self.game.animations[value_for_key(v,'Name', value_for_key(v,'Animation'), exception_on_miss=True)]
+                new_layer = self.game.animations[value_for_key(v, 'anim_name')]
                 new_layer.reset()
+
+                # Apply Zoom
+                if(value_for_key(v, 'zoom_layer') is not None):
+                    new_layer = self.apply_zoom(new_layer, v['zoom_layer'])
 
                 if(value_for_key(v,'duration') is None): # no value found, set it so it will be later.
                     v['duration'] = new_layer.duration()
+
+                # Apply rotation
+                if(value_for_key(v, 'rotate_layer') is not None):
+                    new_layer = self.apply_rotation(new_layer, v['rotate_layer'])
+
+                if(value_for_key(v, 'move_layer') is not None):
+                    new_layer = self.apply_move(new_layer, v['move_layer'])
 
             elif('sequence_layer' in yaml_struct):
                 v = yaml_struct['sequence_layer']
@@ -541,6 +595,14 @@ class DMDHelper(Mode):
                 new_layer.reset()
                 new_layer.set_target_position(x, y)
 
+                # Apply Zoom
+                if(value_for_key(v, 'zoom_layer') is not None):
+                    new_layer = self.apply_zoom(new_layer, v['zoom_layer'])
+
+                # Apply Rotation
+                if (value_for_key(v, 'rotate_layer') is not None):
+                    new_layer = self.apply_rotation(new_layer, v['rotate_layer'])
+
             elif ('text_layer' in yaml_struct):
                 v = yaml_struct['text_layer']
 
@@ -558,6 +620,10 @@ class DMDHelper(Mode):
                     new_layer.width = new_layer.text_width
                 if(h is None):
                     new_layer.height = new_layer.text_height
+
+                # Apply Zoom
+                if(value_for_key(v, 'zoom_layer') is not None):
+                    new_layer = self.apply_zoom(new_layer, v['zoom_layer'])
 
                 # fill_color = value_for_key(v,'fill_color',(0,0,0))
 
@@ -625,7 +691,7 @@ class DMDHelper(Mode):
                 total_zooms = value_for_key(v, 'total_zooms', 30)
 
                 anim_layer = self.genMsgFrame(None, value_for_key(v,'Animation'), font_key=fnt, font_style=font_style)
-                new_layer = dmd.ZoomingLayer(anim_layer, hold, frames_per_zoom, scale_start, scale_stop, total_zooms)                
+                new_layer = dmd.ZoomingLayer(anim_layer, hold, frames_per_zoom, scale_start, scale_stop, total_zooms)
             else:
                 unknown_tag = None
                 if(yaml_struct is not None and len(yaml_struct.keys())>0):

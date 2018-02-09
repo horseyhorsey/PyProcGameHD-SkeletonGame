@@ -762,7 +762,7 @@ class ScriptlessLayer(ScriptedLayer):
         if(seconds is None):
             seconds = layer.duration()
         if(callback is None):
-        	self.script.append({'layer':layer, 'seconds':seconds})
+            self.script.append({'layer':layer, 'seconds':seconds})
         else:
             self.script.append({'layer':layer, 'seconds':seconds, 'callback':callback})
 
@@ -1106,6 +1106,7 @@ class RotationLayer(Layer):
         self.height = content_layer.height
         self.opaque=opaque
         self.fill_color = fill_color
+        self.hw_scale = None
 
     def next_frame(self):
         self.tmp = self.content_layer.next_frame()
@@ -1118,6 +1119,9 @@ class RotationLayer(Layer):
         self.buffer.target_y_offset = self.y
         return self.buffer
 
+    def reset(self):
+        self.content_layer.reset()
+
 class ZoomingLayer(Layer):
     """ A layer that zooms another layer.
 
@@ -1129,6 +1133,9 @@ class ZoomingLayer(Layer):
     orig_w = 0
     orig_h = 0
 
+    orig_scale_start = 0
+    orig_scale_stop = 0
+
     def __init__(self, layer_to_zoom, hold=False, frames_per_zoom = 1, scale_start = 1.0, scale_stop = 2.0, total_zooms=30):
         """Will call 'next_frame' on the @param layer_to_zoom, and will zoom
         that layer from @param scale_start through @param scale_stop, showing the frame at each scaled size
@@ -1139,6 +1146,8 @@ class ZoomingLayer(Layer):
         """
         super(ZoomingLayer, self).__init__()
         self.source_layer = layer_to_zoom
+        self.orig_scale_start = scale_start
+        self.orig_scale_stop = scale_stop
         self.scale_stop = scale_stop
         self.scale_start = scale_start
         self.scale_current = scale_start
@@ -1191,6 +1200,14 @@ class ZoomingLayer(Layer):
         # else:
         # logging.getLogger('zoom_layer').info("done at " + str(self.scale_current))
         return self.nframe
+
+    def reset(self):
+        self.total_zoomed = 0
+        self.nframe = None
+        self.set_target_position(0, 0)
+        self.scale_start = self.orig_scale_start
+        self.scale_current = self.scale_start
+        self.source_layer.reset()
 
 class HDTextLayer(TextLayer):
     """Layer that displays text."""

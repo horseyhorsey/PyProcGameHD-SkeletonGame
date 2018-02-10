@@ -494,8 +494,18 @@ class DMDHelper(Mode):
         loop = value_for_key(move_dict, 'loop', False)
 
         # Needs all all this to stop cropping of images?
+
         group = None
-        if isinstance(layer, dmd.layers.GroupedLayer):
+        if isinstance(layer, tuple):
+            layer = layer[0][0][0]
+            if isinstance(layer, tuple):
+                layer = layer[0][0]
+                if isinstance(layer, tuple):
+                    layer = layer[0]
+
+            group = dmd.GroupedLayer(layer.width, layer.height, [layer])
+
+        elif isinstance(layer, dmd.layers.GroupedLayer):
             group = layer
         elif isinstance(layer, HDTextLayer):
             group = dmd.GroupedLayer(layer.width, layer.height, [layer])

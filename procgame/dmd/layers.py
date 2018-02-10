@@ -1170,8 +1170,12 @@ class ZoomingLayer(Layer):
 
         if(self.nframe is not None):
             del self.nframe
-        self.nframe = self.source_layer.next_frame().copy()
 
+        try:
+            self.nframe = self.source_layer.next_frame().copy()
+        except:
+            self.nframe = None
+            
         if(self.nframe is None):
             return None
 

@@ -676,7 +676,15 @@ class ScriptedLayer(Layer):
 
                 layer = script_item['layer']
                 if layer:
-                    layer.reset()
+                    if isinstance(layer, tuple):
+                        layer = layer[0][0][0]
+                        if layer is not None:
+                            layer.reset()
+                        else:
+                            layer = layer[0][0]
+                            layer[0].reset()
+                    else:
+                        layer.reset()
                 self.is_new_script_item = True
 
                 if('callback' in script_item and script_item['callback'] is not None):
@@ -686,6 +694,14 @@ class ScriptedLayer(Layer):
         layer = script_item['layer']
 
         transition = None
+        if isinstance(layer, tuple):
+            layer = layer[0][0][0]
+            if layer is not None:
+                layer.reset()
+            else:
+                layer = layer[0][0]
+                layer.reset()
+
         if layer and layer.transition:
             if self.is_new_script_item:
                 layer.transition.start()
@@ -725,8 +741,17 @@ class ScriptedLayer(Layer):
         #now reset the layers
         for layer_item in self.script:
            # print layer_item['layer']
-           if layer_item['layer'] != None:
-               layer_item['layer'].reset()
+
+            if isinstance(layer_item['layer'], tuple):
+                layer = layer_item['layer'][0]
+                if layer[0] is not None:
+                    layer[0][0].reset()
+                else:
+                    layer = layer_item['layer'][0][0]
+                    layer[0].reset()
+            else:
+                if layer_item['layer'] != None:
+                    layer_item['layer'].reset()
 
     def regenerate(self):
         """ calls regenerate on layers that support it """

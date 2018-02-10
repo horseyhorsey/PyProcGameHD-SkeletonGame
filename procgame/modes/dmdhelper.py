@@ -402,27 +402,36 @@ class DMDHelper(Mode):
 
         return (lyrTmp, duration, lampshow, sound, name)
 
-    def apply_transforms(self, layer, yaml_dict):
+    def apply_transforms(self, layer, yaml_dict, x=0, y=0):
 
-        # Apply Zoom
-        if (value_for_key(yaml_dict, 'zoom_layer') is not None):
-            layer = self.apply_zoom(layer, yaml_dict['zoom_layer'])
+        trans_applied = False
 
         # Apply Rotation
         if (value_for_key(yaml_dict, 'rotate_layer') is not None):
-            layer = self.apply_rotation(layer, yaml_dict['rotate_layer'])
+            (layer, trans_applied) =  self.apply_rotation(layer, yaml_dict['rotate_layer'])
+
+        # Apply Zoom
+        if (value_for_key(yaml_dict, 'zoom_layer') is not None):
+            (layer, trans_applied) =  self.apply_zoom(layer, yaml_dict['zoom_layer'])
+
+
+        if (value_for_key(yaml_dict, 'fade') is not None):
+            (layer, trans_applied) = self.apply_fade(layer, yaml_dict['fade'])
 
         if (value_for_key(yaml_dict, 'move_layer') is not None):
-            layer = self.apply_move(layer, yaml_dict['move_layer'])
+            (layer, trans_applied) = self.apply_move(layer, yaml_dict['move_layer'])
 
-        return layer
+        if not trans_applied:
+            layer.set_target_position(x, y)
+
+        return (layer, trans_applied)
 
     def apply_zoom(self, layer, zoom_dict):
         """ Applys zoom to a layer from zoom_dict values """
 
         enabled = value_for_key(zoom_dict, 'enabled', False)
         if not enabled:
-            return layer
+            return (layer, False)
 
         hold = value_for_key(zoom_dict, 'hold', False)
         start = value_for_key(zoom_dict, 'scale_start', 0.1)
@@ -430,27 +439,52 @@ class DMDHelper(Mode):
         total_zooms = value_for_key(zoom_dict, 'total_zooms', 30)
         frames_per_zoom = value_for_key(zoom_dict, 'frames_per_zoom', 1)
 
-        return dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, [dmd.ZoomingLayer(layer, hold, frames_per_zoom, start, stop, total_zooms)])
+        # Get the highest scale used
+        scale = 0
+        if start > stop:
+            scale = start
+        else:
+            scale = stop
 
-    def apply_rotation(self, layer, rotate_dict):
+        w=0
+        h=0
+        if isinstance(layer, dmd.MovieLayer):
+            return (dmd.GroupedLayer(layer.frame.width * scale, layer.frame.height * scale, [dmd.ZoomingLayer(layer, hold, frames_per_zoom, start, stop, total_zooms)]), True)
+        else:
+            return (dmd.GroupedLayer(layer.frames[0].width * scale, layer.frames[0].height * scale,
+                                [dmd.ZoomingLayer(layer, hold, frames_per_zoom, start, stop, total_zooms)]), True)
+
+    def apply_rotation(self, layer, rotate_dict, pos_x = 0, pos_y = 0):
 
         enabled = value_for_key(rotate_dict, 'enabled', False)
         if not enabled:
-            return layer
+            return (layer, False)
 
         x = value_for_key(rotate_dict, 'x', 0)
         y = value_for_key(rotate_dict, 'y', 0)
         rotation_update = value_for_key(rotate_dict, 'rotation_update', 10)
 
-        group = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height,[layer])
-        return dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height,
-                                [dmd.RotationLayer(x, y, rotation_update, group)])
+        w = 0
+        h = 0
+        if isinstance(layer, dmd.GroupedLayer):
+            w = layer.width
+            h = layer.height
+            #group = dmd.GroupedLayer(w, h, [layer])
+            group = dmd.GroupedLayer(w, h,
+                                 [dmd.RotationLayer(x, y, rotation_update, layer)])
+        else:
+            w = layer.frames[0].width
+            h = layer.frames[0].height
+            group = dmd.GroupedLayer(w, h, [layer])
+            group = dmd.GroupedLayer(w, h, [dmd.RotationLayer(x, y, rotation_update, group)])
+
+        return (group, True)
 
     def apply_move(self, layer, move_dict):
 
         enabled = value_for_key(move_dict, 'enabled', False)
         if not enabled:
-            return layer
+            return (layer, False)
 
         sx = value_for_key(move_dict, 'start_x', 0)
         sy = value_for_key(move_dict, 'start_y', 0)
@@ -459,8 +493,49 @@ class DMDHelper(Mode):
         frames = value_for_key(move_dict, 'frames', 15)
         loop = value_for_key(move_dict, 'loop', False)
 
-        return dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height,
-                                [dmd.moveLayer(layer, sx,sy, tx, ty, frames , loop=loop)])
+        # Needs all all this to stop cropping of images?
+        group = None
+        if isinstance(layer, dmd.layers.GroupedLayer):
+            group = layer
+        elif isinstance(layer, HDTextLayer):
+            group = dmd.GroupedLayer(layer.width, layer.height, [layer])
+        elif isinstance(layer, dmd.ScaledLayer):
+            group = dmd.GroupedLayer(layer.width, layer.height, [layer])
+        elif isinstance(layer, dmd.FrameLayer) or isinstance(layer, dmd.HDTextLayer):
+            group = dmd.GroupedLayer(layer.frame.width, layer.frame.height, [layer])
+        else:
+            group = dmd.GroupedLayer(layer.get_width(), layer.get_height(), [layer])
+
+        return (dmd.GroupedLayer(group.width, group.height,
+                                [dmd.moveLayer(group, sx, sy, tx, ty, frames, loop=loop)]), True)
+
+    def apply_fade(self, layer, fade_dict):
+        """ 
+        Applys a fade transition. Goes from a None layer to the layer, vice versa, depending on In/Out.
+        :param layer: The layer to apply a fade to
+        :param fade_dict: Fade fict values. param - framecount
+        :return: A transition layer or original layer
+        """""
+
+        param = value_for_key(fade_dict, 'param', 'off')
+        sl = ScriptlessLayer(self.game.dmd.width, self.game.dmd.height)
+        if param == 'off':
+            return (layer, False)
+        else:
+            frame_count = value_for_key(fade_dict, 'frame_count', 30)
+            # if True:
+            #     sl.append(dmd.TransitionLayer(None, layer, Transition.TYPE_FADE, 'in', frame_count), 1.0 * frame_count)
+            #     sl.append(dmd.TransitionLayer(layer, None, Transition.TYPE_FADE, 'out', frame_count), 1.0 * frame_count)
+            #     return (dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, [sl]), True)
+            # else:
+            if param == 'out':
+                trans = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, [dmd.TransitionLayer(layer, None, Transition.TYPE_FADE, param, frame_count)])
+                return (trans, True)
+            elif param == 'in':
+                trans = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, [dmd.TransitionLayer(None, layer, Transition.TYPE_FADE, param, frame_count)])
+                return (trans, True)
+            else:
+                return (layer, False)
 
     def generateLayerFromYaml(self, yaml_struct):
         """ a helper to generate Display Layers given properly formatted YAML """
@@ -483,7 +558,7 @@ class DMDHelper(Mode):
 
                 new_layer = self.genMsgFrame(msg, value_for_key(v,'Animation'), font_key=fnt, font_style=font_style)
                 # Apply transforms
-                new_layer = self.apply_transforms(new_layer, v)
+                (new_layer, applied) = self.apply_transforms(new_layer, v)
                 transition = value_for_key(v, 'transition', None)
                 trans_length = value_for_key(v, 'trans_length', None)
                 trans_param = value_for_key(v, 'trans_param', None)
@@ -519,12 +594,14 @@ class DMDHelper(Mode):
                 repeat = value_for_key(v, 'repeat', True)
 
                 for c in v['contents']:
-                    if not 'item' in c:
-                        raise ValueError, "malformed YAML file; sequence must contain a list of 'item's"
+                    # if not 'item' in c:
+                    #     raise ValueError, "malformed YAML file; sequence must contain a list of 'item's"
                     c = c['item']
-                    l = self.generateLayerFromYaml(c)
+                    l = self.generateLayerFromYaml(c[0])
                     if(hasattr(l,'duration') and callable(l.duration)):
                         def_duration = l.duration()
+                    elif hasattr(l,'duration'):
+                        def_duration = new_layer.duration()
                     else:
                         def_duration = 2.0
                     d = value_for_key(c,'duration',def_duration)
@@ -586,7 +663,7 @@ class DMDHelper(Mode):
                     new_layer.opaque = opaque
                 new_layer.set_target_position(x, y)
 
-                new_layer = self.apply_transforms(new_layer, v)
+                (new_layer, applied) = self.apply_transforms(new_layer, v)
 
                 if transition is not None:
                     new_layer = dmd.TransitionLayer(None, new_layer, transitionType=transition, transitionParameter=trans_param,
@@ -613,11 +690,9 @@ class DMDHelper(Mode):
                 new_layer.opaque=opaque
                 new_layer.repeat = repeat
                 new_layer.hold = (hold_last_frame or len(frame_list)==1)
-
                 new_layer.reset()
-                new_layer.set_target_position(x, y)
 
-                new_layer = self.apply_transforms(new_layer, v)
+                (new_layer, applied) = self.apply_transforms(new_layer, v, x, y)
 
             elif ('text_layer' in yaml_struct):
                 v = yaml_struct['text_layer']
@@ -627,6 +702,8 @@ class DMDHelper(Mode):
 
                 w = self.__parse_relative_num(v, 'width', self.game.dmd.width, default=None)
                 h = self.__parse_relative_num(v, 'height', self.game.dmd.height, default=None)
+                x = value_for_key(v,'x', 0)
+                y = value_for_key(v, 'y', 0)
 
                 blink_frames = value_for_key(v,'blink_frames', None)
 
@@ -637,7 +714,13 @@ class DMDHelper(Mode):
                 if(h is None):
                     new_layer.height = new_layer.text_height
 
-                new_layer = self.apply_transforms(new_layer, v)
+                (group, applied) = self.apply_transforms(dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height), v, x, y)
+
+                if not applied:
+                    new_layer.set_target_position(x, y)
+                    pass
+                else:
+                    new_layer = group
 
                 # fill_color = value_for_key(v,'fill_color',(0,0,0))
 
@@ -657,6 +740,8 @@ class DMDHelper(Mode):
 
                 frm = gen.frame_for_markup(txt)
                 new_layer = dmd.FrameLayer(frame=frm)
+
+                (new_layer, applied) = self.apply_transforms(new_layer, v, 0, 0)
 
                 transition = value_for_key(v, 'transition', None)
                 trans_length = value_for_key(v, 'trans_length', None)

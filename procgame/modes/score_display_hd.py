@@ -94,8 +94,11 @@ class ScoreDisplayHD(advancedmode.AdvancedMode):
         self.multiplayer = dict()
         self.multiplayer_layers = list()
 
-        multiplayer_bg_struct = value_for_key(values, 'ScoreLayout.MultiPlayer.Background')
-        mp_name = multiplayer_bg_struct['Animation']['Name']
+        multiplayer_bg_struct = value_for_key(values, 'ScoreLayout.MultiPlayer.Background', None)
+        mp_name = None
+        if multiplayer_bg_struct is not None:
+            mp_name = multiplayer_bg_struct['Animation']['Name']
+
         from_saved = value_for_key(values, 'ScoreLayout.MultiPlayer.Background.Animation.from_saved', False)
 
         # Add check if name is the Same, or the same name as sp_name or None.. to reuse for single player

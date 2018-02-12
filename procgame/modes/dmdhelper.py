@@ -342,7 +342,9 @@ class DMDHelper(Mode):
                 lyrTmp = self.generateLayerFromYaml(yamlStruct)  # not sure what this is, let the other method parse it
                 v = yamlStruct[
                     yamlStruct.keys()[0]]  # but we reach in and grab it to pull duration, lampshow and sound.
+
                 duration = value_for_key(v, 'duration', None)
+
                 name = value_for_key(v, 'Name', None)
 
             if (v is not None):
@@ -783,7 +785,7 @@ class DMDHelper(Mode):
                 duration = value_for_key(v, 'duration', 1.0)
                 lampshow = value_for_key(v, 'lampshow')
                 sound = value_for_key(v, 'sound')
-                anim = value_for_key(v, 'Animation')
+                anim = value_for_key(v, 'Animation', None)
                 flashing = value_for_key(v, 'flashing')
 
                 # Trans params
@@ -793,6 +795,7 @@ class DMDHelper(Mode):
                 transition_out_param = value_for_key(v, 'trans_out_param', None)
                 transition_length = value_for_key(v, 'trans_length', 5)
                 transition_out_length = value_for_key(v, 'trans_out_length', 5)
+                transition_out_duration = value_for_key(v, 'trans_out_duration', 1.0)
 
                 (fnt, font_style) = self.parse_font_data(v, required=False)
                 msg = value_for_key(v, 'TextOptions')
@@ -832,12 +835,12 @@ class DMDHelper(Mode):
                         sl.append(tl, duration)
 
                         if transition_out is not None:
-                            prev_msg_frame = dmd.TransitionLayer(frames, None,
+                            prev_msg_frame = dmd.TransitionLayer(tl, None,
                                                                  transitionType=transition_out,
                                                                  transitionParameter=transition_out_param,
                                                                  lengthInFrames=transition_out_length)
                             # Append transition out to scripted layer
-                            sl.append(prev_msg_frame, duration)
+                            sl.append(prev_msg_frame, transition_out_duration)
                     else:
                         # Add none to the script
                         sl.append(None, duration)
@@ -846,18 +849,29 @@ class DMDHelper(Mode):
 
                 # add total duration and create the layer
                 duration = totalDuration
-                animLoaded = self.game.animations[anim]
-                anim_duration = animLoaded.duration()
-                if anim_duration > 2.0:
-                    duration = anim_duration
+                anim_duration = 0
 
-                # Fill up the Non if rest of the text is none.
+                # Get the background and calculate the duration.
+                if anim is not None:
+                    animLoaded = self.game.animations[anim]
+                    anim_duration = animLoaded.duration()
+
+                    if anim_duration > 2.0:
+                        duration = anim_duration
+
+                # Fill up duration with None if rest of the text is none.
                 if totalDuration > anim_duration:
                     duration = totalDuration
                 elif totalDuration < anim_duration:
-                    sl.append(None, (totalDuration - duration))
+                    duration = (totalDuration - duration)
+                    sl.append(None, duration)
 
-                new_layer = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, layers=[sl])
+                if animLoaded is not None:
+                    new_layer = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, layers=[animLoaded, sl])
+                else:
+                    new_layer = sl
+
+                v['duration'] = duration
 
                 # if transition is not None:
                 #     lyrTmp = dmd.TransitionLayer(None, lyrTmp, transitionType=transition,

@@ -541,6 +541,7 @@ class DMDHelper(Mode):
 
             elif ('Animation' in yaml_struct):
                 v = yaml_struct['Animation']
+                (x, y) = self.__parse_position_data(v)
 
                 new_layer = self.game.animations[value_for_key(v, 'anim_name')]
                 new_layer.reset()
@@ -652,6 +653,7 @@ class DMDHelper(Mode):
 
                 source_layer = self.game.animations[
                     value_for_key(v, 'name', value_for_key(v, 'Name'), exception_on_miss=True)]
+                source_layer.set_target_position(x, y)
 
                 opaque = value_for_key(v, 'opaque', source_layer.opaque)
                 repeat = value_for_key(v, 'repeat', source_layer.repeat)
@@ -668,7 +670,6 @@ class DMDHelper(Mode):
                 new_layer.opaque = opaque
                 new_layer.repeat = repeat
                 new_layer.hold = (hold_last_frame or len(frame_list) == 1)
-
                 new_layer.reset()
 
                 if (value_for_key(v, 'move_layer') is not None):
@@ -807,6 +808,8 @@ class DMDHelper(Mode):
                 # Create scriptless_text from lines in list
                 sl = ScriptlessLayer(self.game.dmd.width, self.game.dmd.height)
                 totalDuration = 0.0  # Total up the text layers created
+                anim_duration = 0
+                animLoaded = None
 
                 # Prev frames to transition from
                 prev_msg_frame = None
@@ -849,7 +852,6 @@ class DMDHelper(Mode):
 
                 # add total duration and create the layer
                 duration = totalDuration
-                anim_duration = 0
 
                 # Get the background and calculate the duration.
                 if anim is not None:
@@ -869,7 +871,7 @@ class DMDHelper(Mode):
                 if animLoaded is not None:
                     new_layer = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, layers=[animLoaded, sl])
                 else:
-                    new_layer = sl
+                    new_layer = dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height, layers=[sl])
 
                 v['duration'] = duration
 

@@ -263,7 +263,7 @@ class SkeletonGame(BasicGame):
             #if(self.use_HD_servicemode):
             #    self.service_mode = serviceHD.ServiceModeHD(self, 99, self.fonts['settings-font-small'], self.fonts['settings-font-small'], extra_tests=[])
             #elif(self.use_stock_servicemode):
-            self.service_mode = service.ServiceMode(self, 99, self.fonts['settings-font-small'], extra_tests=[])
+            self.service_mode = service.ServiceMode(self, 99, self.fonts['service_mode_font'], extra_tests=[])
 
             if(self.use_stock_tiltmode):
                 # find a tilt switch

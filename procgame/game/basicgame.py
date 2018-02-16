@@ -55,8 +55,8 @@ class BasicGame(GameController):
         if self.dmd: self.dmd.frame_handlers.append(self.set_last_frame)
 
     def load_config(self, path):
-        super(BasicGame, self).load_config(path)
-
+        super(BasicGame,self).load_config(path)
+        
         # Setup the key mappings from the config.yaml.
         # We used to do this in __init__, but at that time the
         # configuration isn't loaded so we can't peek into self.switches.
@@ -68,16 +68,17 @@ class BasicGame(GameController):
                     switch_number = self.switches[switch_name].number
                 else:
                     switch_number = pinproc.decode(self.machine_type, switch_name)
-                if (type(k) != int):  # letter keys are added as letters (obv)
+                if(type(k)!=int): # letter keys are added as letters (obv)
+                    key_str = str(k).replace("\\t", "\t").replace("\\b", "\b").replace("\\r", "\r")
+                    self.desktop.add_key_map(ord(key_str), switch_number)
+                elif(k<10): # 0-9 as keys
                     self.desktop.add_key_map(ord(str(k)), switch_number)
-                elif (k < 10):  # 0-9 as keys
-                    self.desktop.add_key_map(ord(str(k)), switch_number)
-                else:  # numbers used as bindings for specials -- examples below
+                else: # numbers used as bindings for specials -- examples below
                     self.desktop.add_key_map(k, switch_number)
-            # K_LSHIFT: 304
-            # K_RSHIFT: 303
-            # K_F1: 	282
-            # K_F12: 	293
+                    # K_LSHIFT: 304
+                    # K_RSHIFT: 303
+                    # K_F1:     282
+                    # K_F12:    293
 
     def reset(self):
         """Calls super's reset and adds the :class:`ScoreDisplay` mode to the mode queue."""

@@ -16,12 +16,12 @@
 #
 ##########################
 from . import GameController
-from . import BasicGame
+from . import BasicGame, BasicRecordableGame
 from . import Player
 from .advancedmode import AdvancedMode
 from ..dmd import HDDisplayController, font_named, sdl2_DisplayManager
 from ..dmd.layers import SolidLayer, GroupedLayer, ScriptlessLayer
-from ..modes import ScoreDisplay, ScoreDisplayHD
+from ..modes import ScoreDisplay, ScoreDisplayHD, RecordingMode
 from ..modes import Trough, ballsave, BallSearch
 from ..modes import osc
 from ..modes import DMDHelper, SwitchMonitor
@@ -396,6 +396,10 @@ class SkeletonGame(BasicGame):
                 self.attract_mode = Attract(game=self, start_button_lamp=start_lamp)
             else:
                 self.attract_mode = None
+
+            # This should be enough to tell if we're using a BasicRecordableGame
+            if "start_recording" in dir(self):
+                self.recording_mode = RecordingMode(game=self)
 
         except Exception, e:
             if(hasattr(self,'osc') and self.osc is not None):

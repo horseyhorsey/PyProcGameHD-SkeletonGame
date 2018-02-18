@@ -366,8 +366,9 @@ class DMDHelper(Mode):
         trans_applied = False
 
         # Apply Rotation
-        if (value_for_key(yaml_dict, 'rotate_layer') is not None):
-            (layer, trans_applied) = self.apply_rotation(layer, yaml_dict['rotate_layer'])
+        if not isinstance(layer, dmd.HDTextLayer):
+            if (value_for_key(yaml_dict, 'rotate_layer') is not None):
+                (layer, trans_applied) = self.apply_rotation(layer, yaml_dict['rotate_layer'])
 
         # Apply Zoom
         if (value_for_key(yaml_dict, 'zoom_layer') is not None):
@@ -378,9 +379,6 @@ class DMDHelper(Mode):
 
         if (value_for_key(yaml_dict, 'move_layer') is not None):
             layer = self.apply_move(layer, yaml_dict['move_layer'])
-
-        if not trans_applied:
-            layer.set_target_position(x, y)
 
         return (layer, trans_applied)
 
@@ -431,13 +429,24 @@ class DMDHelper(Mode):
             # group = dmd.GroupedLayer(w, h, [layer])
             group = dmd.GroupedLayer(w, h,
                                      [dmd.RotationLayer(x, y, rotation_update, layer)])
+        elif isinstance(layer, dmd.MovieLayer):
+            w = layer.movie.width
+            h = layer.movie.height
+            group = dmd.GroupedLayer(w, h, [layer])
+            group = dmd.GroupedLayer(w, h,
+                                     [dmd.RotationLayer(x, y, rotation_update, group)])
         else:
-            w = layer.frames[0].width
-            h = layer.frames[0].height
+            if hasattr(layer, 'width'):
+                w = layer.width
+                h = layer.height
+            else:
+                w = layer.frames[0].width
+                h = layer.frames[0].height
+
             group = dmd.GroupedLayer(w, h, [layer])
             group = dmd.GroupedLayer(w, h, [dmd.RotationLayer(x, y, rotation_update, group)])
 
-        return (group, True)
+        return group, True
 
     def apply_move(self, layer, move_dict):
 
@@ -672,10 +681,10 @@ class DMDHelper(Mode):
                 new_layer.hold = (hold_last_frame or len(frame_list) == 1)
                 new_layer.reset()
 
-                if (value_for_key(v, 'move_layer') is not None):
-                    new_layer = self.apply_move(new_layer, v['move_layer'])
+                # if (value_for_key(v, 'move_layer') is not None):
+                #     new_layer = self.apply_move(new_layer, v['move_layer'])
 
-                #(new_layer, applied) = self.apply_transforms(new_layer, v, x, y)
+                (new_layer, applied) = self.apply_transforms(new_layer, v, x, y)
 
             elif ('text_layer' in yaml_struct):
                 v = yaml_struct['text_layer']
@@ -698,6 +707,8 @@ class DMDHelper(Mode):
                     new_layer.height = new_layer.text_height
 
                 new_layer.set_target_position(x, y)
+
+                (new_layer, applied) = self.apply_transforms(new_layer, v)
 
                 #(group, applied) = self.apply_transforms(dmd.GroupedLayer(self.game.dmd.width, self.game.dmd.height), v, x, y)
 

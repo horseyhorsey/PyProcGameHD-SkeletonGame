@@ -1,5 +1,7 @@
 import logging
 
+import sys
+
 from ..game import Mode
 from .. import dmd
 from ..dmd import TransitionLayer
@@ -791,6 +793,43 @@ class DMDHelper(Mode):
 
                 anim_layer = self.genMsgFrame(None, value_for_key(v, 'Animation'), font_key=fnt, font_style=font_style)
                 new_layer = dmd.ZoomingLayer(anim_layer, hold, frames_per_zoom, scale_start, scale_stop, total_zooms)
+            elif ('particle_layer' in yaml_struct):
+
+                v = yaml_struct['particle_layer']
+
+                emitters = value_for_key(v, 'emitters', None)
+                if emitters is not None:
+                    w = self.__parse_relative_num(v, 'width', self.game.dmd.width, None)
+                    h = self.__parse_relative_num(v, 'height', self.game.dmd.height, None)
+
+                    particle_emitters = []
+
+                    for e in emitters:
+                        x = value_for_key(e, 'x', 450)
+                        y = value_for_key(e, 'y', 220)
+                        max_life = value_for_key(e, 'max_life', 20)
+                        max_part = value_for_key(e, 'max_particles', 200)
+                        part_per_update = value_for_key(e, 'particles_per_update', 40)
+                        total_creations = value_for_key(e, 'total_creations', None)
+                        particle_class = value_for_key(e, 'particle_class', dmd.SnowParticle)
+
+                        if particle_class == 'SnowParticle':
+                            particle_class = dmd.SnowParticle
+                        elif particle_class == 'FireParticle':
+                            particle_class = dmd.FireParticle
+                        elif particle_class == 'FireworkParticle':
+                            particle_class = dmd.FireworkParticle
+
+                        particle_emitters.append(dmd.ParticleEmitter(x, y, max_life,
+                                                                     max_part, part_per_update, total_creations, particle_class, random_next= True))
+
+                    new_layer = dmd.ParticleLayer(w, h, particle_emitters)
+
+                # hold = value_for_key(v, 'hold', False)
+                # frames_per_zoom = value_for_key(v, 'frames_per_zoom', 1)
+                # scale_start = value_for_key(v, 'scale_start', 1.0)
+                # scale_stop = value_for_key(v, 'scale_stop', 2.0)
+                # total_zooms = value_for_key(v, 'total_zooms', 30)
             elif 'ScriptedText' in yaml_struct:
                 v = yaml_struct['ScriptedText']
 

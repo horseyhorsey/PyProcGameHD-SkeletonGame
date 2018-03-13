@@ -14,7 +14,8 @@ __all__ = [
     'switchmonitor',
     'rgbshow',
     'profiles_menu',
-    'RecordingMode'
+    'RecordingMode',
+    'Lanes'
 ]
 from ballsave import *
 from ballsearch import *
@@ -32,6 +33,7 @@ from switchmonitor import *
 from rgbshow import *
 from profiles_menu import *
 from recording_mode import *
+from lanes import *
 
 from ..game import Mode
 

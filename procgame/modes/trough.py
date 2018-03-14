@@ -253,11 +253,10 @@ class Trough(Mode):
                 # Shouldn't need this, but it fixes situations where
                 # num_balls_in_play tracking
                 # fails, and those situations are still occuring.
-                elif curr_trough_count == \
-                     num_trough_balls_if_multiball_ending:
-                    self.num_balls_in_play = 1
+                elif curr_trough_count == num_trough_balls_if_multiball_ending:
                     if self.drain_callback:
                         self.drain_callback()
+                    self.num_balls_in_play = 1
                 # Otherwise, another ball from multiball is draining
                 # if the trough gets one more than it would have if
                 # all num_balls_in_play are not in the trough.

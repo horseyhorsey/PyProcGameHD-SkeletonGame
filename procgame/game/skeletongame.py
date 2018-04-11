@@ -29,7 +29,7 @@ from ..modes import bonusmode, service, Attract, TiltMonitorMode, Tilted, Profil
 from ..profiles import ProfileManager, TrophyManager
 from ..modes.trophymode import TrophyMode
 #from ..modes import serviceHD
-
+from ..tools import db_client
 from .. import sound
 from .. import config
 from .. import auxport
@@ -148,7 +148,6 @@ class SkeletonGame(BasicGame):
                 from time import sleep
                 sleep(15)
                 exit(-1)
-
 
             self.dmd_width = config.value_for_key_path('dmd_dots_w', 480)
             self.dmd_height = config.value_for_key_path('dmd_dots_h', 240)
@@ -400,6 +399,9 @@ class SkeletonGame(BasicGame):
             # This should be enough to tell if we're using a BasicRecordableGame
             if "start_recording" in dir(self):
                 self.recording_mode = RecordingMode(game=self)
+
+            # Database client to save played games.
+            self.database = db_client.GameDbClient(self.curr_file_path, 'GameHistory.db')
 
         except Exception, e:
             if(hasattr(self,'osc') and self.osc is not None):
@@ -1315,7 +1317,7 @@ class SkeletonGame(BasicGame):
         self.ball_search_tries = 0
         self.game_data['Audits']['Games Started'] += 1
         self.save_game_data('game_user_data.yaml')
-
+        self.ball_start_date = time.strftime("%a %b %d %Y %H:%M:%S", time.localtime(time.time()))
         self.notifyModes('evt_game_starting', args=None, event_complete_fn=self.actually_start_game)
 
     def check_trough_is_ready(self):
@@ -1387,8 +1389,19 @@ class SkeletonGame(BasicGame):
 
         # Increment the total time game played
         self.game_data['Audits']['Total Game Time'] += round(totalTimePlayed)
+        
+        # Save Yaml
+        self.save_game_data('game_user_data.yaml')        
 
-        self.save_game_data('game_user_data.yaml')
+        # Get ball Start/End time
+        self.ball_save_time = self.user_settings['Gameplay (Feature)']['Ball Save Timer']
+        self.game_end_time = time.strftime("%a %b %d %Y %H:%M:%S", time.localtime(time.time()))
+
+        # Save to GameHistory Db
+        try:
+            self.database.save_game_played(self.ball_start_date, self.game_end_time, self.players, self.balls_per_game, self.ball_save_time)
+        except:
+            self.logger.debug("Failed saving local game history database")
 
         # show any animations you want in ball_ending
         self.notifyModes('evt_game_ending', args=None, event_complete_fn=self.game_ended)
@@ -1695,20 +1708,21 @@ class BonusRecord(object):
         pass
 
 def find_in_list(name, list):
-    found_item = next((tmpItem for tmpItem in list if tmpItem["name"] == name), None)
-    return found_item
+	found_item = next((tmpItem for tmpItem in list if tmpItem["name"] == name), None)
+	return found_item
 
 ## the following just set things up such that you can run Python ExampleGame.py
 # and it will create an instance of the correct game objct and start running it!
 def main():
-    # initialize the sound playback hardware
-    pygame.mixer.pre_init(44100,-16,2,512)
-    # print pygame.mixer.get_init()
+	# initialize the sound playback hardware
+	pygame.mixer.pre_init(44100,-16,2,512)
+	# print pygame.mixer.get_init()
 
-    game = None
-    game = SkeletonGame()
-    game.run_loop()
-    del game
+	game = None
+	game = SkeletonGame()
+	game.run_loop()
+	del game
 
 if __name__ == '__main__':
-    main()
+	main()
+

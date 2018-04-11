@@ -1,0 +1,4 @@
+Trophys:
+  Welcome: {completedDate: '', description: Launched your
+      first ball, icon: trop_welcome}
+  FirstGame: {completedDate: 'Thu Jan 11 19:11:12 2018', description: Played your first game, icon: trop_firstgame}

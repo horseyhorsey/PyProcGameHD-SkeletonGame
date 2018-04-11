@@ -1,8 +1,10 @@
 import logging
 
+from procgame.modes import profiles_menu
 from ..game import Mode
 from procgame.game import SwitchStop, SwitchContinue
 from .. import highscore
+#from procgame.modes import profiles_menu
 
 
 class SwitchMonitor(Mode):
@@ -14,10 +16,13 @@ class SwitchMonitor(Mode):
 
     # Enter service mode when the enter button is pushed.
     def sw_enter_active(self, sw):
-        self.game.log("starting service mode")
-        if not self.game.service_mode in self.game.modes:
-            self.game.start_service_mode()
-            return SwitchStop
+
+        if hasattr(self.game, 'service_mode'):
+            self.game.log("starting service mode")
+            if self.game.service_mode not in self.game.modes:
+                self.game.start_service_mode()
+                return SwitchStop
+
         return SwitchContinue
 
     def sw_startButton_active_for_2s(self, sw):
@@ -28,10 +33,14 @@ class SwitchMonitor(Mode):
         for m in self.game.modes:
             if isinstance(m, highscore.HD_EntrySequenceManager):
                 return SwitchContinue
+            elif isinstance(m, profiles_menu.ProfileMenu):
+                return SwitchContinue
 
-        if(self.game.attract_mode in self.game.modes):
-            # Initialize game   
+        if self.game.attract_mode in self.game.modes:
+
+            # Initialize normal game, no profile manager
             self.game.start_game()
+
             # Start_game takes care of adding the first player and starting a ball in SkelGame
         else:
             # not in attract mode; tell SkelGame to add another player

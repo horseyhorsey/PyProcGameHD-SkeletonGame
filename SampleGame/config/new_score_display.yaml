@@ -39,7 +39,7 @@ ScoreLayout:
         Background: # if omitted here, Singleplayer value is used.  Set to None to disable
             Animation: 
                 Name: chrome
-        Foreground: None # set to None to disable
+        #Foreground: None # set to None to disable
         # CreditIndicator: # if you define these here too, they replace the others
         # BallNumber:   # as above
         ActivePlayer:

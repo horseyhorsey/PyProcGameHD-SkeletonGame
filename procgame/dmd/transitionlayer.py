@@ -51,7 +51,7 @@ class moveLayer(Layer):
     def reset(self):
         self.step_number = 0
         self.finished = False
-        
+        self.object_layer.reset()
 
 class TransitionLayer(Layer):
 
@@ -151,6 +151,8 @@ class TransitionLayer(Layer):
         self.finished_flag = False
         if(self.transitionMgr is not None):
             # this if will never fail.  I might as well assert this.
+            #self.layer_A_wrapped.reset()
+            self.layer_B_wrapped.reset()
             self.transitionMgr.start()
 
 

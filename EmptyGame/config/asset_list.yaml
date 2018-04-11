@@ -104,9 +104,9 @@ Fonts:
     size: 12
   ##########################
   # fonts for modes used by me
-  - key: 'huge_messages'
+  - key: 'service_mode_font'
     file: 'Oswald-Heavy.ttf'
-    size: 48
+    size: 18
   DMDFonts:
   # Example follows; I don't actually use any, but this is how you would.
   # - key: 'CC_9px'

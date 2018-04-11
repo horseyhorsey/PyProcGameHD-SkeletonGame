@@ -148,14 +148,15 @@ class GameController(object):
 
     def get_total_time_played_string(self, strTime='00:00:00', addTime = 0):
         """ Returns the total time as a string for saving """      
-        timeToSeconds = self.get_seconds_from_string(strTime)
+        timeToSeconds = self.get_seconds_from_string(strTime)        
         totalSeconds = timeToSeconds + addTime        
         return time.strftime("%X",time.localtime(totalSeconds))  
 
     def get_seconds_from_string(self, strTime):
         """ Converts a time string to seconds """
+        self.log(strTime)
         ftr = [3600,60,1]
-        return sum([a*b for a,b in zip(ftr, map(int,strTime.split(':')))])
+        return sum([a*b for a,b in zip(ftr, map(float,strTime.split(':')))])
 
     def save_ball_start_time(self):
         self.ball_start_time = time.time()
@@ -255,9 +256,9 @@ class GameController(object):
     
     def process_config(self):
         """Called by :meth:`load_config` and :meth:`load_config_stream` to process the values in :attr:`config`."""
-        pairs = [('PRCoils', self.coils, Driver), 
-                 ('PRLamps', self.lamps, Driver), 
-                 ('PRSwitches', self.switches, Switch),
+        pairs = [('PRSwitches', self.switches, Switch),
+                 ('PRCoils', self.coils, Driver),
+                 ('PRLamps', self.lamps, Driver),
                  ('PRLEDs', self.leds, LED) ]
 
         new_virtual_drivers = []
@@ -275,7 +276,11 @@ class GameController(object):
                 sect_dict = self.config[section]
                 for name in sect_dict:
 
-                    item_dict = sect_dict[name]
+                    # alternate way of creating machine.yaml with list instead but leave existing functionality
+                    if isinstance(sect_dict, list):
+                        item_dict = name
+                    else:
+                        item_dict = sect_dict[name]
     
                     # Find the P-ROC number for each item in the YAML sections.  For PDB's
                     # the number is based on the PDB configuration determined above.  For
@@ -296,8 +301,12 @@ class GameController(object):
                         yaml_number = str(item_dict['number'])
                         if klass==LED:
                             number = yaml_number
-                        
-                        item = klass(self, name, number)
+
+                        if isinstance(sect_dict, list):
+                            item = klass(self, name['name'], number)
+                        else:
+                            item = klass(self, name, number)
+
                         item.yaml_number = yaml_number
                         if 'label' in item_dict:
                             item.label = item_dict['label']
@@ -325,7 +334,10 @@ class GameController(object):
                             if ('polarity' in item_dict):
                                 item.invert = not item_dict['polarity']
 
-                    collection.add(name, item)
+                    if isinstance(sect_dict, list):
+                        collection.add(name['name'], item)
+                    else:
+                        collection.add(name, item)
     
         # In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
         # So if any VirtualDrivers were added, the regular drivers in that group must be changed
@@ -487,6 +499,14 @@ class GameController(object):
             for key, value in template.iteritems():
                 if key not in self.game_data:
                     self.game_data[key] = copy.deepcopy(value)
+
+                # Add any missing values from the template
+                if isinstance(value, dict):
+                    for field, val in value.iteritems():
+                        if field not in self.game_data[key]:
+                            self.game_data[key][field] = copy.deepcopy(val)
+                else:  # We have a list or something..else
+                    pass
     
     def save_game_data(self, filename):
         """Writes the game data to *filename*.  See :meth:`load_game_data`."""

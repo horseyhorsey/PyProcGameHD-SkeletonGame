@@ -4,7 +4,7 @@ Sequence:
     - LastScores:
         Font: large
         FontStyle: blueish
-        Background: dark_chrome
+        Animation: dark_chrome
         lampshow: attract_show_2
         sound: sling
         duration: 2.0
@@ -85,24 +85,15 @@ Sequence:
     - RandomText:
         Header: Instructions ## omit line completely to specify 'None'
         TextOptions:
-            - Text:
-                - ""
-                - do not drink
-                - gasoline
-                - ""
-            - Text:
-                - ""
-                - ""
-                - do not tip
-                - vending machines
-                - ""
+            - Text: ["" ,"do not drink","gasoline", ""]
+            - Text: ["", "", "do not tip", "vending machines", ""]
             - Text: ["", "", "do not swim in", "the ocean", ""]
-            - Text: don't panic
+            - Text: ["don't panic"]
             - Text: [ "", "do not enrich" ,"uranium without","a permit"]
             - Text: [ "", "", "keep away from", "high voltage", ""]
-            - Text: "avoid green meat"
+            - Text: ["avoid green meat"]
             - Text: [ "", "", "do not lick,festering wounds",""]
-            - Text: "own a gas mask"
+            - Text: ["own a gas mask"]
             - Text: [ "", "", "do not pick","up hitchhikers",""]
             - Text: [ "", "", "build a fallout","shelter", ""]
             - Text: [ "", "secure your", "gas mask before", "assisting others"]
@@ -128,7 +119,7 @@ Sequence:
     - HighScores:
         Font: tiny
         FontStyle: weird
-        Background: dark_chrome
+        Animation: dark_chrome
         Order:
             - player
             - category

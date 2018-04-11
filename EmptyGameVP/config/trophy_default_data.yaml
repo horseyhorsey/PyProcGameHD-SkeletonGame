@@ -1,0 +1,9 @@
+Trophys:
+  'Welcome':
+    description: 'Launched your first ball'
+    completedDate: ''
+    icon: ''
+  'FirstGame':
+    description: 'Played your first game'
+    completedDate: ''
+    icon: ''

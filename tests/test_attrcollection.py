@@ -6,7 +6,7 @@ TEST_EVENT='test'
 class EventsTest(unittest.TestCase):
 
 	def setUp(self):
-		self.attrs = AttrCollection()
+		self.attrs = AttrCollection('a')
 		item = GameItem(game=None, name='a', number=1)
 		item.tags.append('awesome')
 		self.attrs.add(item.name, item)

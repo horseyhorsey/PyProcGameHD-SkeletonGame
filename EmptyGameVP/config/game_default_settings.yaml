@@ -1,0 +1,144 @@
+Machine (Standard):
+  'Balls Per Game':
+    options: [1,10]
+    increments: 1
+    default: 3
+  'Quick Bonus Mode':
+    options: [False,True]
+    default: True
+  'Attract Mode Sounds':
+    options: ['On','Off']
+    default: 'Off'
+  'Attract Mode Music':
+    options: ['On','Off']
+    default: 'Off'
+Machine (Coils):
+  'Auto Plunger':
+    options: [24,63]
+    increments: 1
+    default: 32
+Sound:
+  'Initial volume':
+    options: [0,20]
+    increments: 1
+    default: 5
+  'Music volume offset':
+    options: [-0.4,-0.3,-0.2,-0.1,0,0.1,0.2,0.3,0.4]
+    default: 0
+Gameplay (Feature):
+  'Skillshot Autoplunge Timer':
+    options: [0,30]
+    increments: 1
+    default: 15
+  'Ball Save Timer':
+    options: [0,20]
+    increments: 1
+    default: 10
+VPTranslite:
+  'DirectB2S':
+    options: [0,1]
+    default: 0
+VPSounds:
+  'LSlingshot':
+    options: [0,1]
+    default: 1
+  'RSlingshot':
+    options: [0,1]
+    default: 1
+  'Flippers':
+    options: [0,1]
+    default: 1
+  'FlipperVol':
+    options: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+    default: 0.8
+  'Bumpers':
+    options: [0,1]
+    default: 1
+  'AutoPlunger':
+    options: [0,1]
+    default: 1    
+  'TroughEnter':
+    options: [0,1]
+    default: 1
+  'TroughExit':
+    options: [0,1]
+    default: 1
+  'Scoop':
+    options: [0,1]
+    default: 1
+  'VUK':
+    options: [0,1]
+    default: 1
+  'Saucer':
+    options: [0,1]
+    default: 1
+  'Kicker':
+    options: [0,1]
+    default: 1
+  'DropTargets':
+    options: [0,1]
+    default: 1
+  'DropTargetReset':
+    options: [0,1]
+    default: 1    
+  'StandUpTargets':
+    options: [0,1]
+    default: 1    
+VPTable:
+  'VPTable Config Enabled':
+    options: [0,1]
+    default: 0  
+  'Gravity':
+    options: [0.0,2.0]
+    increments: 0.1
+    default: 0.9    
+  'Elasticity':
+    options: [0.00, 2.00]
+    increments: 0.10
+    default: 0.20 
+  'Friction':
+    options: [0.0000,1.0000]
+    increments: 0.0025
+    default: 0.0025
+  'NudgeTime':
+    options: [0.0, 20.0]
+    increments: 0.1
+    default: 9.0 
+  'Scatter':
+    options: [0.0,5.0]
+    increments: 0.1
+    default: 0.0    
+VPFlippers:
+  'VPFlippers Config Enabled':
+    options: [0,1]
+    default: 0  
+  'Strength':
+    options: [1200, 4000]
+    increments: 50
+    default: 2200  
+  'Friction':
+    options: [0.0000,1.0000]
+    increments: 0.0050
+    default: 0.6000
+  'Mass':
+    options: [0.0, 3.0]
+    increments: 0.1
+    default: 1.0
+  'Elasticity':
+    options: [0.0, 2.0]
+    increments: 0.1
+    default: 0.8    
+  'ElasticityFalloff':
+    options: [0.00, 2.00]
+    increments: 0.01
+    default: 0.43
+VPFlashers:
+  'Intensity':
+    options: [0, 200]
+    increments: 5
+    default: 20
+VPGi:
+  'Intensity':
+    options: [0, 200]
+    increments: 5
+    default: 20

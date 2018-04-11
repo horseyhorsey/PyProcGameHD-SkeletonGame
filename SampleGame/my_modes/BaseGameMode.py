@@ -85,6 +85,11 @@ class BaseGameMode(procgame.game.AdvancedMode):
         # (defaults are 1 ball, save time length is based on service mode setting)
 
         self.game.enable_ball_saver()
+
+        # Show the welcome trophy if first ball and using trophys
+        if self.game.ball == 1 and self.game.use_player_trophys:
+            if not self.game.trophy_mode.is_trophy_complete('Welcome'):
+                self.game.trophy_mode.set_and_display_trophy_completed('Welcome')
         
 
     def evt_ball_saved(self):
@@ -185,6 +190,12 @@ class BaseGameMode(procgame.game.AdvancedMode):
         self.game.sound.play('ball_drain')
         self.game.sound.play_music('sonic')
         self.game.displayText('BGM Ball Ended!')
+
+        # Give player trophy if this is their first game played
+        if self.game.use_player_trophys:
+            if last_ball and not shoot_again:
+                if not self.game.trophy_mode.is_trophy_complete('FirstGame'):
+                    self.game.trophy_mode.set_and_display_trophy_completed('FirstGame')
         return 2.0
 
     def evt_game_ending(self):

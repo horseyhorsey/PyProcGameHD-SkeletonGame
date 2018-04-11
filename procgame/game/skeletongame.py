@@ -15,20 +15,21 @@
 #       font: default_msg
 #
 ##########################
-
 from . import GameController
-from . import BasicGame
+from . import BasicGame, BasicRecordableGame
 from . import Player
 from .advancedmode import AdvancedMode
 from ..dmd import HDDisplayController, font_named, sdl2_DisplayManager
 from ..dmd.layers import SolidLayer, GroupedLayer, ScriptlessLayer
-from ..modes import ScoreDisplay, ScoreDisplayHD
+from ..modes import ScoreDisplay, ScoreDisplayHD, RecordingMode
 from ..modes import Trough, ballsave, BallSearch
 from ..modes import osc
 from ..modes import DMDHelper, SwitchMonitor
-from ..modes import bonusmode, service, Attract, TiltMonitorMode, Tilted
+from ..modes import bonusmode, service, Attract, TiltMonitorMode, Tilted, ProfileMenu
+from ..profiles import ProfileManager, TrophyManager
+from ..modes.trophymode import TrophyMode
 #from ..modes import serviceHD
-
+from ..tools import db_client
 from .. import sound
 from .. import config
 from .. import auxport
@@ -104,12 +105,20 @@ class SkeletonGame(BasicGame):
         more of the functionality that one expects to be in a 'generic' 'modern' pinball machine
     """
     def __init__(self, machineYamlFile, curr_file_path, machineType=None):
+
+        self.profile_manager = None
+        self.trophy_manager = None
+
+        self.generated_sequences = {}
+        """ Holds all the loaded sequences """
+
         try:
             self.cleaned_up = False
             random.seed()
 
+            audio_freq_rate = config.value_for_key_path('audio_freq_rate', 22050)
             audio_buffer_size = config.value_for_key_path('audio_buffer_size', 512)
-            pygame.mixer.pre_init(44100,-16,2, audio_buffer_size)
+            pygame.mixer.pre_init(audio_freq_rate,-16,2, audio_buffer_size)
 
             self.curr_file_path = curr_file_path
 
@@ -124,12 +133,21 @@ class SkeletonGame(BasicGame):
             if not machine_type:
                 raise ValueError, 'machine config(filename="%s") did not set machineType, and not set in SkeletonGame() init.' % (machineYamlFile)
 
-            # try:
-            super(SkeletonGame, self).__init__(machine_type)
-            # except IOError, e:
-            #     self.log("Error connecting to P-ROC -- running virtual mode")
-            #     config.values['pinproc_class'] = 'procgame.fakepinproc.FakePinPROC'
-            #     super(SkeletonGame, self).__init__(machine_type)
+            try:
+                super(SkeletonGame, self).__init__(machine_type)
+            except IOError, e:
+                self.log("Error connecting to P-ROC -- running virtual mode")
+                sdl2_DisplayManager.inst().clear((0,0,0,0))
+                s = "Hardware connection failed."
+                tx = sdl2_DisplayManager.inst().font_render_text(s, font_alias=None, size=None, width=300, color=(255,128,0,0), bg_color=None)
+                sdl2_DisplayManager.inst().screen_blit(tx, x=260, y=150, expand_to_fill=False)
+                s = "Ensure boards have power and USB cable is secure."
+                tx2 = sdl2_DisplayManager.inst().font_render_text(s, font_alias=None, size=None, width=300, color=(255,128,0,0), bg_color=None)
+                sdl2_DisplayManager.inst().screen_blit(tx2, x=160, y=300, expand_to_fill=False)
+                sdl2_DisplayManager.inst().flip()
+                from time import sleep
+                sleep(15)
+                exit(-1)
 
             self.dmd_width = config.value_for_key_path('dmd_dots_w', 480)
             self.dmd_height = config.value_for_key_path('dmd_dots_h', 240)
@@ -183,7 +201,7 @@ class SkeletonGame(BasicGame):
             self.game_tilted = False # indicates if any kind of tilt has occured; tilt, slam_tilt
 
             # create a sound controller (self.game.sound from within modes)
-            self.sound = sound.SoundController(self, buffer_size = audio_buffer_size)
+            self.sound = sound.SoundController(self, frequency=audio_freq_rate, buffer_size=audio_buffer_size)
             self.modes.add(self.sound)
 
             self.settings = []
@@ -191,7 +209,7 @@ class SkeletonGame(BasicGame):
             # create a lamp controller for lampshows
             self.lampctrl = lamps.LampController(self)
 
-            ### the rgb show player is a player for rgb lamps 
+            ### the rgb show player is a player for rgb lamps
             self.rgbshow_player = RgbShowPlayer(game=self, priority=50)
             self.modes.add(self.rgbshow_player)
             self.rgbshow_player.reset()
@@ -211,12 +229,20 @@ class SkeletonGame(BasicGame):
             self.use_ballsearch_mode = config.value_for_key_path('default_modes.ball_search', True)
             self.use_multiline_score_entry = config.value_for_key_path('default_modes.multiline_highscore_entry', False)
             self.ballsearch_time = config.value_for_key_path('default_modes.ball_search_delay', 30)
+            self.use_player_profiles = config.value_for_key_path('default_modes.player_profiles', False)
+            self.use_player_trophys = config.value_for_key_path('default_modes.player_trophys', False)
 
             self.dmdHelper = DMDHelper(game=self)
+            self.genLayerFromYAML = self.dmdHelper.genLayerFromYAML
             self.modes.add(self.dmdHelper)
 
+            # Get pre made sequences
+            sequence_file = 'config/sequences.yaml'
+            if os.path.exists(sequence_file):
+                self.generate_sequences(yaml_file=sequence_file)
+
             if(self.use_stock_scoredisplay is True):
-                self.score_display = ScoreDisplay(self,0)
+                self.score_display = ScoreDisplay(self, 0)
             elif(self.use_stock_scoredisplay=='HD'):
                 self.score_display = ScoreDisplayHD(self, 0)
 
@@ -225,10 +251,19 @@ class SkeletonGame(BasicGame):
 
             self.load_settings_and_stats()
 
+            if self.use_player_profiles:
+                self.load_profiles('config/profile_default_data.yaml', 'config/profiles')
+                self.profiles_menu_mode = ProfileMenu(self, 125)
+                # Only use trophys if using profiles
+                if self.use_player_trophys:
+                    self.load_trophys('config/trophy_default_data.yaml', 'config/trophys')
+                    self.trophy_mode = TrophyMode(self)
+
             #if(self.use_HD_servicemode):
             #    self.service_mode = serviceHD.ServiceModeHD(self, 99, self.fonts['settings-font-small'], self.fonts['settings-font-small'], extra_tests=[])
             #elif(self.use_stock_servicemode):
-            self.service_mode = service.ServiceMode(self, 99, self.fonts['settings-font-small'], extra_tests=[])
+            if self.use_stock_servicemode:
+                self.service_mode = service.ServiceMode(self, 99, self.fonts['service_mode_font'], extra_tests=[])
 
             if(self.use_stock_tiltmode):
                 # find a tilt switch
@@ -352,14 +387,21 @@ class SkeletonGame(BasicGame):
 
             # # call reset (to reset the machine/modes/etc)
 
-            self.genLayerFromYAML = self.dmdHelper.genLayerFromYAML
-
             self.notify_list = None
             self.curr_delayed_by_mode = None
 
             if(self.use_stock_attractmode):
                 start_lamp = self.lamps.item_named_or_tagged('start_button')
                 self.attract_mode = Attract(game=self, start_button_lamp=start_lamp)
+            else:
+                self.attract_mode = None
+
+            # This should be enough to tell if we're using a BasicRecordableGame
+            if "start_recording" in dir(self):
+                self.recording_mode = RecordingMode(game=self)
+
+            # Database client to save played games.
+            self.database = db_client.GameDbClient(self.curr_file_path, 'GameHistory.db')
 
         except Exception, e:
             if(hasattr(self,'osc') and self.osc is not None):
@@ -634,7 +676,7 @@ class SkeletonGame(BasicGame):
             #We are still processing an event
             self.logger.error("Trying to notify modes about new event [%s] while [%s] is still being processed!!" % (event, self.event))
 
-            self.sg_event_queue.append(SGEvent(event,args,event_complete_fn,only_active_modes))            
+            self.sg_event_queue.append(SGEvent(event,args,event_complete_fn,only_active_modes))
             return
 
         delay = 0
@@ -667,7 +709,7 @@ class SkeletonGame(BasicGame):
             will be notified in priority order and notifications happen within this run_loop cycle -- that is,
             the next mode will be notified immediately after the previous mode has executed its event
             handler method. Modes should not respond to notifications by returning a
-            number of seconds required to complete the handling of this event, because it will be ignored.  
+            number of seconds required to complete the handling of this event, because it will be ignored.
 
             Setting the only_active_modes=False will notify _all_ known modes, not just active
             modes.  This will be of _very_ limited utility, however is useful for events such as
@@ -785,8 +827,8 @@ class SkeletonGame(BasicGame):
         self.modes.add(self.switchmonitor)
 
     def start_attract_mode(self):
-        self.attract_mode.reset()
-        self.modes.add(self.attract_mode) # plays the attract mode and kicks off the game
+        if (self.attract_mode != None):
+            self.modes.add(self.attract_mode) # plays the attract mode and kicks off the game
 
 
     def enable_alphanumeric_flippers(self, enable):
@@ -826,18 +868,26 @@ class SkeletonGame(BasicGame):
 
         sect_dict = self.config['PRSwitches']
         for name in sect_dict:
-            item_dict = sect_dict[name]
-
-            if ('ballsearch' in item_dict):
-                self.switches[name].ballsearch = item_dict['ballsearch']
+            if not isinstance(sect_dict, list):
+                item_dict = sect_dict[name]
+                if ('ballsearch' in item_dict):
+                    self.switches[name].ballsearch = item_dict['ballsearch']
+            else:
+                item_dict = name
+                if ('ballsearch' in item_dict):
+                    self.switches[name['name']].ballsearch = item_dict['ballsearch']
 
 
         sect_dict = self.config['PRCoils']
         for name in sect_dict:
-            item_dict = sect_dict[name]
-
-            if ('ballsearch' in item_dict):
-                self.coils[name].ballsearch = item_dict['ballsearch']
+            if not isinstance(sect_dict, list):
+                item_dict = sect_dict[name]
+                if ('ballsearch' in item_dict):
+                    self.coils[name].ballsearch = item_dict['ballsearch']
+            else:
+                item_dict = name
+                if ('ballsearch' in item_dict):
+                    self.coils[name['name']].ballsearch = item_dict['ballsearch']
 
 
     def load_settings_and_stats(self):
@@ -883,6 +933,60 @@ class SkeletonGame(BasicGame):
     def load_settings(self, file_default, file_game):
         return super(SkeletonGame, self).load_settings(os.path.join('config/' + file_default),os.path.join('config/' + file_game))
 
+    def load_profiles(self, profile_template, profile_directory):
+        self.profile_manager = ProfileManager(profile_template, profile_directory)
+        self.profile_manager.populate_profiles_from_directory()
+
+    def save_player_profile(self, plr_index):
+        """ Saves the players profile to disk if data is available """
+
+        curr_plr_profile = self.players[plr_index].profile
+        if curr_plr_profile is None:
+            return
+
+        ply_data = curr_plr_profile.player_data
+        if bool(ply_data):
+            ply_name = curr_plr_profile.player_name
+            plr_score = self.players[plr_index].score
+            game_time = self.get_game_time(plr_index)
+
+            ply_data['Audits']['Games Played'] += 1
+
+            ply_data['Audits']['Total Game Time'] += game_time
+
+            ply_data['Audits']['Avg Game Time'] = \
+                self.calc_time_average_string(ply_data['Audits']['Games Played'],
+                                              ply_data['Audits']['Avg Game Time'], game_time)
+            ply_data['Audits']['Avg Score'] = \
+                self.calc_number_average(ply_data['Audits']['Games Played'],
+                                         ply_data['Audits']['Avg Score'], plr_score)
+
+            # Save players hi scores if beaten
+            _hiScores = ply_data['ClassicHighScores']
+            try:
+                for x in _hiScores:
+                    if plr_score > x['score']:
+                        x['score'] = plr_score
+                        x['inits'] = ply_name
+                        break
+            except Exception, e:
+                self.log('Failed adjusting players score')
+                pass
+
+            curr_plr_profile.save(self.profile_manager.save_dir)
+        pass
+
+    def save_player_trophy(self, plr_index):
+        """ Saves the players trophy to disk if data is available """
+
+        curr_plr_trophy = self.players[plr_index].trophy
+        if curr_plr_trophy is not None:
+            curr_plr_trophy.save(self.trophy_manager.save_dir)
+
+    def load_trophys(self, trophy_template, trophys_directory):
+        self.trophy_manager = TrophyManager(trophy_template, trophys_directory)
+        self.trophy_manager.populate_trophy_from_directory()
+
     def load_assets(self):
         """ function to clean up code/make things easier to read;
             this handles reading/loading of all assets (sounds, dmd images,
@@ -897,7 +1001,28 @@ class SkeletonGame(BasicGame):
     def load_skipped_asset(self, assetkey):
         anim = self.skipped_animations[assetkey]
         if (anim != ""):
-            return self.asset_mgr.load_skipped_anim(anim)        
+            return self.asset_mgr.load_skipped_anim(anim)
+
+    def generate_sequences(self, yaml_file):
+        """ Parses a yaml file with sequences and adds to the generated_sequences dict """
+        try:
+            self.sequences = yaml.load(open(yaml_file, 'r'))
+        except yaml.scanner.ScannerError, e:
+            self.logger.debug('Attract mode: Error loading yaml file from %s; the file has a syntax error in it!\nDetails: %s' % (yaml_file, e))
+            raise
+        except Exception, e:
+            self.logger.debug('Attract mode: Error loading yaml file from %s: %s' % (yaml_file, e))
+            raise
+
+        for s in self.sequences['Sequence']:
+            layer_data = self.genLayerFromYAML(s)
+            (lyrTmp, duration, lampshow, sound, name) = layer_data
+
+            if name is not None:
+                seq = Sequence(lyrTmp, sound, lampshow, duration)
+                self.generated_sequences[name] = seq
+            else:
+                self.logger.debug("Name cannot be empty when adding from a Sequence file.")
 
     def load_volume(self):
         try:
@@ -967,14 +1092,36 @@ class SkeletonGame(BasicGame):
             # Calculate ball time and save it because the start time
             # gets overwritten when the next ball starts.
             self.ball_time = self.get_ball_time()
+            ball_time_seconds = round(self.ball_time)
             self.current_player().game_time += self.ball_time
 
             self.game_data['Audits']['Avg Ball Time'] = self.calc_time_average_string(self.game_data['Audits']['Balls Played'], self.game_data['Audits']['Avg Ball Time'], self.ball_time)
             self.game_data['Audits']['Balls Played'] += 1
+
+            longest_ball_time = self.game_data['Audits']['Longest Ball Time']
+            if ball_time_seconds > longest_ball_time:
+                self.game_data['Audits']['Longest Ball Time'] = ball_time_seconds
+
             # can't save here as file might still be open on game end...
             # self.save_game_data('game_user_data.yaml')
 
-            # Remove ball drained logic until the ball is fed into the shooter lane again
+            # Update player profile values
+            plr_profile = self.current_player().profile
+            if plr_profile is not None:
+                if bool(plr_profile.player_data):
+                    plr_data = plr_profile.player_data
+
+                    plr_data['Audits']['Balls Played'] += 1
+                    plr_data['Audits']['Avg Ball Time'] = self.calc_time_average_string(
+                        plr_data['Audits']['Balls Played'], plr_data['Audits']['Avg Ball Time'], self.ball_time)
+
+                    # Add to longest ball time if beaten
+                    longest_ball_time = plr_data['Audits']['Longest Ball Time']
+                    if ball_time_seconds > longest_ball_time:
+                        plr_data['Audits']['Longest Ball Time'] = ball_time_seconds
+                    self.logger.info("Updated players profile")
+
+        # Remove ball drained logic until the ball is fed into the shooter lane again
             self.trough.drain_callback = None
             self.trough.launch_callback = None
             self.trough.launched_callback = self.__install_drain_logic
@@ -1156,12 +1303,30 @@ class SkeletonGame(BasicGame):
         """ this happens after start_game but before start_ball/ball_starting"""
         self.logger.info("Skel:Game START Requested...(check trough first)")
 
+        # Check if we can start the game
+        if not self.check_trough_is_ready():
+            return
+
+        # remove attract mode
+        self.modes.remove(self.attract_mode)
+        super(SkeletonGame, self).game_started()
+
+        for m in self.known_modes[AdvancedMode.Game]:
+            self.modes.add(m())
+
+        self.ball_search_tries = 0
+        self.game_data['Audits']['Games Started'] += 1
+        self.save_game_data('game_user_data.yaml')
+        self.ball_start_date = time.strftime("%a %b %d %Y %H:%M:%S", time.localtime(time.time()))
+        self.notifyModes('evt_game_starting', args=None, event_complete_fn=self.actually_start_game)
+
+    def check_trough_is_ready(self):
         # check trough and potentially do a ball search first
         if(self.game_start_pending and (self.trough.num_balls() < self.num_balls_total)):
             self.logger.info("Skel: Game START : PLEASE WAIT!! -- TROUGH STATE is still BLOCKING GAME START!")
             # self.set_status("Balls STILL Missing: PLEASE WAIT!!", 3.0)
             self.notifyModes('evt_balls_missing', args=None, event_complete_fn=None)
-            return
+            return False
 
         if(self.trough.num_balls() < self.num_balls_total):
             self.game_start_pending=True
@@ -1173,33 +1338,26 @@ class SkeletonGame(BasicGame):
                 self.logger.debug("Skel: game_started: Programmer custom ball search initiated")
                 self.do_ball_search(silent=False)
                 self.ball_search.delay(name='ballsearch_start_delay', event_type=None, delay=3.0, handler=self.reset_search)
-            return
+            return False
         else: # we have the right number of balls
             self.game_start_pending=False
             if(self.use_ballsearch_mode):
                 self.ball_search.cancel_delayed(name='ballsearch_start_delay')
 
+            return True
+
         self.logger.info("Skel:Game START Proceeding")
 
-        # remove attract mode
-        self.modes.remove(self.attract_mode)
-
-        super(SkeletonGame, self).game_started()
-
-        for m in self.known_modes[AdvancedMode.Game]:
-            self.modes.add(m())
-
-        self.ball_search_tries = 0
-        self.game_data['Audits']['Games Started'] += 1
-        self.save_game_data('game_user_data.yaml')
-
-        self.notifyModes('evt_game_starting', args=None, event_complete_fn=self.actually_start_game)
-
     def actually_start_game(self):
-        # Add the first player
-        self.add_player()
-        # Start the ball.  This includes ejecting a ball from the trough.
-        self.start_ball()
+
+        if self.use_player_profiles:
+            # self.modes.remove(self.attract_mode)
+            self.modes.add(self.profiles_menu_mode)
+        else:
+            # Add the first player
+            self.add_player()
+            # Start the ball.  This includes ejecting a ball from the trough.
+            self.start_ball()
 
     def end_game(self):
         """Called by the implementor to mark notify the game that the game has ended."""
@@ -1213,7 +1371,7 @@ class SkeletonGame(BasicGame):
         totalTimePlayed = 0
 
         # Also handle game stats.
-        for i in range(0,len(self.players)):
+        for i in range(0, len(self.players)):
             game_time = self.get_game_time(i)
             totalTimePlayed += game_time            
             self.game_data['Audits']['Avg Game Time'] = self.calc_time_average_string( self.game_data['Audits']['Games Played'], self.game_data['Audits']['Avg Game Time'], game_time)
@@ -1222,12 +1380,28 @@ class SkeletonGame(BasicGame):
 
             self.logger.info("Skel: 'player %d score %d" % (i, self.players[i].score))
 
-        # Increment the total time game played
-        self.logger.info("Skel: Total Game Time: " + str(totalTimePlayed))
-        totalTimePlayedStr = self.get_total_time_played_string(self.game_data['Audits']['Total Game Time'], totalTimePlayed)
-        self.game_data['Audits']['Total Game Time'] = totalTimePlayedStr
+            # Save players profile if available
+            self.save_player_profile(i)
 
-        self.save_game_data('game_user_data.yaml')
+            # Save player trophy
+            if self.use_player_trophys:
+                self.save_player_trophy(i)
+
+        # Increment the total time game played
+        self.game_data['Audits']['Total Game Time'] += round(totalTimePlayed)
+        
+        # Save Yaml
+        self.save_game_data('game_user_data.yaml')        
+
+        # Get ball Start/End time
+        self.ball_save_time = self.user_settings['Gameplay (Feature)']['Ball Save Timer']
+        self.game_end_time = time.strftime("%a %b %d %Y %H:%M:%S", time.localtime(time.time()))
+
+        # Save to GameHistory Db
+        try:
+            self.database.save_game_played(self.ball_start_date, self.game_end_time, self.players, self.balls_per_game, self.ball_save_time)
+        except:
+            self.logger.debug("Failed saving local game history database")
 
         # show any animations you want in ball_ending
         self.notifyModes('evt_game_ending', args=None, event_complete_fn=self.game_ended)
@@ -1317,6 +1491,10 @@ class SkeletonGame(BasicGame):
         for lamp in self.lamps:
             lamp.disable()
 
+        # turn off all the LEDs, too
+        for lamp in self.leds:
+            lamp.disable()
+
     def create_player(self, name):
         # do NOT call the super class, we replace the
         # player with our own 'advancedPlayerRecord'
@@ -1369,7 +1547,27 @@ class SGEvent(object):
         self.args = evt_args
         self.on_complete_fn = on_complete_fn
         self.only_active_modes = only_active_modes
-            
+
+class Sequence(object):
+
+    layer = None
+    """the layer, animation, text, etc"""
+
+    sound = None
+    """ the sound """
+
+    lampshow = None
+    """ The lampshow to play in sequence"""
+
+    duration = 2.0
+    """ The duration to play"""
+
+    def __init__(self, lyr, snd, lmp, duration):
+        self.layer = lyr
+        self.sound = snd
+        self.lampshow = lmp
+        self.duration = duration
+
 class AdvPlayer(Player):
     """Represents a player in the game.
     The game maintains a collection of players in :attr:`GameController.players`."""
@@ -1383,6 +1581,12 @@ class AdvPlayer(Player):
 
     bonus_records = None
     """ the information about bonuses awarded to the player on this ball (or held over) """
+
+    profile = None
+    """ The players profile to save audits, scores, stats per player """
+
+    trophy = None
+    """ The players trophy object"""
 
     def __init__(self, name):
         super(AdvPlayer, self).__init__(name)
@@ -1504,20 +1708,21 @@ class BonusRecord(object):
         pass
 
 def find_in_list(name, list):
-    found_item = next((tmpItem for tmpItem in list if tmpItem["name"] == name), None)
-    return found_item
+	found_item = next((tmpItem for tmpItem in list if tmpItem["name"] == name), None)
+	return found_item
 
 ## the following just set things up such that you can run Python ExampleGame.py
 # and it will create an instance of the correct game objct and start running it!
 def main():
-    # initialize the sound playback hardware
-    pygame.mixer.pre_init(44100,-16,2,512)
-    # print pygame.mixer.get_init()
+	# initialize the sound playback hardware
+	pygame.mixer.pre_init(44100,-16,2,512)
+	# print pygame.mixer.get_init()
 
-    game = None
-    game = SkeletonGame()
-    game.run_loop()
-    del game
+	game = None
+	game = SkeletonGame()
+	game.run_loop()
+	del game
 
 if __name__ == '__main__':
-    main()
+	main()
+

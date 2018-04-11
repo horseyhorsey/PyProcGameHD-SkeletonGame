@@ -20,7 +20,7 @@ except Exception, e:
 from procgame.events import EventManager
 
 try:
-    from ..dmd import sdl2_displaymanager  
+    from ..dmd import sdl2_displaymanager
     from ..dmd.sdl2_displaymanager import *
     import sdl2.ext
     import pygame
@@ -32,10 +32,10 @@ except ImportError:
 class Desktop():
     """The :class:`Desktop` class helps manage interaction with the desktop, providing both a windowed
     representation of the DMD, as well as translating keyboard input into pyprocgame events."""
-    
+
     exit_event_type = 99
     """Event type sent when Ctrl-C is received."""
-    
+
     key_map = {}
 
     dots_w = 128
@@ -61,6 +61,7 @@ class Desktop():
         self.dmd_soften = config.value_for_key_path(keypath='dmd_soften', default="0")
         self.use_rgb_dmd_device = config.value_for_key_path(keypath='rgb_dmd.enabled', default=False)
         self.dmd_flip = config.value_for_key_path(keypath='dmd_flip', default=0)
+        self.dmd_always_on_top = config.value_for_key_path(keypath='dmd_always_on_top', default=True)
         if(self.use_rgb_dmd_device):
             # turn off dots and scaling, since they are incompatible (at this time) --SDL2 bug.
             self.screen_scale = 1
@@ -74,12 +75,12 @@ class Desktop():
         if(self.use_rgb_dmd_device):
             if(serial is None):
                 raise ValueError, "RGBDMD: config.yaml specified rgb_dmd enabled, but requird pySerial library not installed/found."
-            self.serialPort = serial.Serial(port=self.serial_port_number, baudrate=2500000)  
+            self.serialPort = serial.Serial(port=self.serial_port_number, baudrate=2500000)
             self.magic_cookie = bytearray([0xBA,0x11,0x00,0x03,  0x04,  0x00,  0x00,0x00])
 
             self.serialPort.write(self.magic_cookie);
 
-            self.draw = self.draw_to_rgb_dmd            
+            self.draw = self.draw_to_rgb_dmd
             return
 
         if(self.dot_filter==True):
@@ -116,11 +117,11 @@ class Desktop():
             sdl2.SDL_SetRenderTarget(sdl2_DisplayManager.inst().texture_renderer.renderer, bk) # revert back
         else:
             self.draw = self.draw_no_dot_effect
-    
+
     def add_key_map(self, key, switch_number):
         """Maps the given *key* to *switch_number*, where *key* is one of the key constants in :mod:`pygame.locals`."""
         self.key_map[key] = switch_number
-    
+
     def clear_key_map(self):
         """Empties the key map."""
         self.key_map = {}
@@ -148,6 +149,13 @@ class Desktop():
                 elif event.key.keysym.sym in self.key_map:
                     key_event['type'] = pinproc.EventTypeSwitchClosedDebounced
                     key_event['value'] = self.key_map[event.key.keysym.sym]
+                # Toggle the window border
+                if event.key.keysym.sym == sdl2.SDLK_F11:
+                    self.window_border = not self.window_border
+                    sdl2_DisplayManager.inst().set_window_border(self.window_border)
+                # Save the windows position to the config.yaml
+                if event.key.keysym.sym == sdl2.SDLK_F12:
+                    self.save_window_position_to_config()
             elif event.type == sdl2.SDL_KEYUP:
                 if event.key.keysym.sym == sdl2.SDLK_LCTRL or event.key.keysym.sym == sdl2.SDLK_RCTRL:
                     self.ctrl = 0
@@ -159,13 +167,13 @@ class Desktop():
         e = self.key_events
         self.key_events = []
         return e
-    
-    
+
+
     event_listeners = {}
-    
+
     def event_name_for_pygame_event_type(self, event_type):
         return 'pygame(%s)' % (event_type)
-    
+
     screen = None
     """:class:`pygame.Surface` object representing the screen's surface."""
 
@@ -181,8 +189,10 @@ class Desktop():
             flags = flags | sdl2.SDL_WINDOW_FULLSCREEN
         if(self.window_border is False):
             flags = flags | sdl2.SDL_WINDOW_BORDERLESS
+        if self.dmd_always_on_top:
+            flags = flags | sdl2.SDL_WINDOW_ALWAYS_ON_TOP
 
-        sdl2_DisplayManager.Init(self.dots_w, self.dots_h, self.screen_scale,  "PyProcGameHD.  [CTRL-C to exit]", self.screen_position_x,self.screen_position_y, flags, self.dmd_soften)
+        sdl2_DisplayManager.Init(self.dots_w, self.dots_h, self.screen_scale,  "SkeletonGame/PyProcGameHD  [ESC to exit]", self.screen_position_x,self.screen_position_y, flags, self.dmd_soften)
         sdl2_DisplayManager.inst().fonts_init(None,"Courier")
 
     def draw(self, frame):
@@ -217,14 +227,14 @@ class Desktop():
         sdl2_DisplayManager.inst().flip()
 
         bucket = sdl2_DisplayManager.inst().make_bits_from_texture(frame.pySurface, 128, 32)
-        
+
         self.serialPort.write(self.magic_cookie);
         s = bytearray([])
         i = 0
 
         while(i < 128*32*4):
             # print("pixel %i: %s, %s, %s, %s" % (i/4, bucket[i], bucket[i+1], bucket[i+2], bucket[i+3]))
-            
+
             s.append(bucket[i])
             s.append(bucket[i+1])
             s.append(bucket[i+2])
@@ -233,7 +243,7 @@ class Desktop():
 
             i+=4
         # print (s)
-        self.serialPort.write(s)            
+        self.serialPort.write(s)
 
         del bucket
         # print(type(b))
@@ -241,6 +251,15 @@ class Desktop():
         # del tx
         # do python send
 
+    def save_window_position_to_config(self):
+        x = ctypes.c_int(0)
+        y = ctypes.c_int(0)
+        sdl2.SDL_GetWindowPosition(sdl2_DisplayManager.inst().window.window, x, y)
+        self.screen_position_x = x.value
+        self.screen_position_y = y.value
+        config.values['screen_position_x'] = self.screen_position_x
+        config.values['screen_position_y'] = self.screen_position_y
+        config.save()
 
     def __str__(self):
         return '<Desktop pySDL2>'

@@ -1,5 +1,6 @@
 from ..game import Mode
 import re
+from procgame.dmd import GroupedLayer
 
 class AdvancedMode(Mode):
     """Abstraction of a game mode to be subclassed by the game
@@ -73,3 +74,40 @@ class AdvancedMode(Mode):
     def force_event_next(self):
         self.game.notifyNextModeNow(self)
 
+    def play_sequence(self, key, mute_sound=False, mute_lamps=False, overlay_txt=[], font_key=None, font_style=None):
+        
+        generatedSeq = self.get_sequence(key)
+
+        if generatedSeq is not None:
+
+            self.cancel_delayed('clear_layer')
+
+            generatedSeq.layer.reset()
+
+            text = None
+            if overlay_txt:
+                text = self.game.generateLayer(overlay_txt, font_key=font_key,font_style=font_style)
+
+            group = GroupedLayer(self.game.dmd.width, self.game.dmd.height, [generatedSeq.layer, text])
+
+            self.layer = group
+
+            if not mute_sound and generatedSeq.sound is not None:
+                self.game.sound.play(generatedSeq.sound)
+
+            if not mute_lamps and generatedSeq.lampshow is not None:
+                self.game.lampctrl.play_show(generatedSeq.lampshow)
+
+            self.delay("clear_layer", None, generatedSeq.duration, self.clear_layer)
+        else:
+            self.game.logger.debug("Couldn't find generated sequence for the given key : {}".format(key))
+
+    def get_sequence(self, key):
+        """ Gets a Sequence from the games generated_Sequences"""
+        if key in self.game.generated_sequences:
+            return self.game.generated_sequences[key]
+        else:
+            return None
+
+    def clear_layer(self):
+        self.layer = None

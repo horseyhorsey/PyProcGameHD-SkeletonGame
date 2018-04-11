@@ -49,6 +49,8 @@ Animations:
   file: 'texture.png'
 - key: 'status_bg'
   file: light_texture.png
+- key: 'trophy'
+  file: trophy.png
 Fonts:
   FontStyles:
   - key: status_font_style
@@ -160,6 +162,9 @@ Fonts:
   - key: 'high_score_entry_letters'
     file: 'Oswald-Heavy.ttf'
     size: 12
+  - key: 'service_mode_font'
+    file: 'Oswald-Heavy.ttf'
+    size: 18    
   DMDFonts:
   # Example follows; I don't actually use any, but this is how you would.
   # - key: 'CC_9px'

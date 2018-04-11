@@ -7,7 +7,9 @@ __author__ = 'Dave Horsefield'
 
 
 class ProfileMenu(Mode):
-    """ A menu to create, load & save player profiles """
+    """ A menu to create, load & save player profiles
+        Change the default font and style in the generate_text_layer
+    """
 
     _players = {1: 'Empty', 2: 'Empty', 3: 'Empty', 4: 'Empty'}
     """ A list of default players for the menu"""
@@ -77,17 +79,15 @@ class ProfileMenu(Mode):
         self._info_layer = self.generate_text_layer(_width / 2, _height - (_height / 10), 'tiny')
 
         # Player layers
-        self._plr1 = self.generate_text_layer(4, _height / 4, justify='left')
-        self._plr2 = self.generate_text_layer(_width / 4, _height / 4, justify='left')
-        self._plr3 = self.generate_text_layer(_width - (_width / 2), _height / 4, justify='left')
-        self._plr4 = self.generate_text_layer(_width - (_width / 4), _height / 4, justify='left')
+        self._plr1 = self.generate_text_layer(_width * 0.05, _height * 0.5, justify='left')
+        self._plr2 = self.generate_text_layer(_width * 0.3, _height * 0.5, justify='left')
+        self._plr3 = self.generate_text_layer(_width * 0.55, _height * 0.5, justify='left')
+        self._plr4 = self.generate_text_layer(_width * 0.75, _height * 0.5, justify='left')
 
-        self._plr1Name = self.generate_text_layer(4, _height / 2, justify='left')
-        self._plr2Name = self.generate_text_layer(_width / 4, _height / 2, justify='left')
-        self._plr3Name = self.generate_text_layer(_width - (_width / 2), _height / 2, justify='left')
-        self._plr4Name = self.generate_text_layer(_width - (_width / 4), _height / 2, justify='left')
-
-        pass
+        self._plr1Name = self.generate_text_layer(_width * 0.05, _height * 0.6, justify='left')
+        self._plr2Name = self.generate_text_layer(_width * 0.3, _height * 0.6, justify='left')
+        self._plr3Name = self.generate_text_layer(_width * 0.55, _height * 0.6, justify='left')
+        self._plr4Name = self.generate_text_layer(_width * 0.75, _height * 0.6, justify='left')
 
     def generate_text_layer(self, x=20, y=100, font='small', justify='center', vert_justify='top'):
         return procgame.dmd.HDTextLayer(x, y, self.game.fonts[font], justify, vert_justify)
@@ -369,11 +369,12 @@ class ProfileMenu(Mode):
 
                 self.update_layers()
 
+        # Profile options menu
         elif self._current_menu == 2:
-            if self._selected_frame >= 0 and not self._selected_frame > 3:
-                self._selected_frame += 1
-                self.update_layers()
-            pass
+            if self._selected_frame >= 0:
+                if not self._selected_frame >= 3:
+                    self._selected_frame += 1
+                    self.update_layers()
 
         # Profile selection
         elif self._current_menu == 3:

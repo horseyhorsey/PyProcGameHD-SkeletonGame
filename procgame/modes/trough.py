@@ -257,6 +257,8 @@ class Trough(Mode):
                     if self.drain_callback:
                         self.drain_callback()
                     self.num_balls_in_play = 1
+                    if self.drain_callback:
+                        self.drain_callback()                    
                 # Otherwise, another ball from multiball is draining
                 # if the trough gets one more than it would have if
                 # all num_balls_in_play are not in the trough.

@@ -71,6 +71,7 @@ class Desktop():
                 raise ValueError, "RGBDMD: config.yaml specified rgb_dmd enabled, but no com_port value (e.g., com3) given!"
 
         self.setup_window()
+        self.click_window()
 
         if(self.use_rgb_dmd_device):
             if(serial is None):
@@ -194,6 +195,29 @@ class Desktop():
 
         sdl2_DisplayManager.Init(self.dots_w, self.dots_h, self.screen_scale,  "SkeletonGame/PyProcGameHD  [ESC to exit]", self.screen_position_x,self.screen_position_y, flags, self.dmd_soften)
         sdl2_DisplayManager.inst().fonts_init(None,"Courier")
+
+    def click_window(self):
+        """ Clicks the window making sure its always on top if set
+            Should pass if using anything other than windows.
+        """
+        try:
+            import win32api
+            import win32con
+            import win32gui
+
+            # Set the foreground window because other windows may be above this one.
+            win = win32gui.FindWindow(None, u"SkeletonGame/PyProcGameHD  [ESC to exit]")
+            win32gui.SetForegroundWindow(win)
+
+            # Set cursor positions and click the window 10 pixels in from x y
+            x = config.values['screen_position_x'] + 10
+            y = config.values['screen_position_y'] + 10
+            win32api.SetCursorPos((x, y))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN | win32con.MOUSEEVENTF_ABSOLUTE, 0, 0)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP | win32con.MOUSEEVENTF_ABSOLUTE, 0, 0)
+            win32api.ClipCursor((0, 0, 0, 0))
+        except Exception as e:
+            print (e.message)
 
     def draw(self, frame):
         """Draw the given :class:`~procgame.dmd.Frame` in the window."""

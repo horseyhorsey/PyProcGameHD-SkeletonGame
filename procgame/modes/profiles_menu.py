@@ -218,7 +218,10 @@ class ProfileMenu(Mode):
 
         self.game.log('Creating new profile for {}'.format(inits))
         self.game.profile_manager.create(inits)
-        self.game.trophy_manager.create(inits)
+
+        if self.game.use_player_trophys:
+            self.game.trophy_manager.create(inits)
+            
         self._players[self._selected_player] = inits
         self.load_menu(1)
         pass

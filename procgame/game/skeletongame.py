@@ -1244,6 +1244,7 @@ class SkeletonGame(BasicGame):
         self.ball_ended()
         if self.current_player().extra_balls > 0:
             self.current_player().extra_balls -= 1
+            self.current_player().extra_balls_awarded += 1
             self.shoot_again()
             return
         if self.current_player_index + 1 == len(self.players):

@@ -411,6 +411,9 @@ class Player(object):
 
     extra_balls = 0
     """Number of extra balls that this player has earned."""
+
+    extra_balls_awarded = 0
+    """Number of extra balls that this player has been awarded"""
     
     game_time = 0
     """Number of seconds that this player has had the ball in play."""

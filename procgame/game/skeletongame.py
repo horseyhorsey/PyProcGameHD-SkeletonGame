@@ -169,7 +169,7 @@ class SkeletonGame(BasicGame):
             self.sfx_path = self.sound_path + config.value_for_key_path('sfx_dir', "sfx/")
             self.music_path = self.sound_path + config.value_for_key_path('music_dir', "music/")
 
-            self.hdfont_path = config.value_for_key_path('hdfont_dir', curr_file_path + "/assets/fonts/")
+            self.hdfont_path = config.value_for_key_path('hdfont_path', curr_file_path + "/assets/fonts/")
 
             # known_modes are all AdvancedModes that have been created; they are stored by type
             # what is stored is a weakref to each, so we don't mess up reference counts/garbage collection

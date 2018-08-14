@@ -414,26 +414,31 @@ class PDBConfig(object):
 
         # Make a list of unique coil banks
         for name in config['PRCoils']:
-            item_dict = config['PRCoils'][name]
-            coil = Coil(self, str(item_dict['number']))
-            if coil.bank() not in coil_bank_list:
-                coil_bank_list.append(coil.bank())
+            if isinstance(name, dict):
+                item_dict = name
+                coil = Coil(self, str(item_dict['number']))
+                if coil.bank() not in coil_bank_list:
+                    coil_bank_list.append(coil.bank())
+            else:
+                item_dict = name
 
         # Make a list of unique lamp source banks.  The P-ROC only supports 2.
         # TODO: What should be done if 2 is exceeded?
-        for name in config['PRLamps']:
-            item_dict = config['PRLamps'][name]
-            lamp = Lamp(self, str(item_dict['number']))
+        try:
+            for name in config['PRLamps']:
+                if not isinstance(name, list):
+                    item_dict = name
+                    lamp = Lamp(self, str(item_dict['number']))
 
-            # Catalog PDB banks
-            # Dedicated lamps don't use PDB banks.  They use P-ROC direct
-            # driver pins.
-            if lamp.lamp_type == 'dedicated':
-                pass
+                    # Catalog PDB banks
+                    # Dedicated lamps don't use PDB banks.  They use P-ROC direct
+                    # driver pins.
+                    if lamp.lamp_type == 'dedicated':
+                        pass
 
-            elif lamp.lamp_type == 'pdb':
-                if lamp.source_bank() not in lamp_source_bank_list:
-                    lamp_source_bank_list.append(lamp.source_bank())
+                    elif lamp.lamp_type == 'pdb':
+                        if lamp.source_bank() not in lamp_source_bank_list:
+                            lamp_source_bank_list.append(lamp.source_bank())
 
 
                 # Create dicts of unique sink banks.  The source index is needed when
@@ -448,6 +453,8 @@ class PDBConfig(object):
                 if lamp_dict not in lamp_list:
                     lamp_list.append(lamp_dict)
                     lamp_list_for_index.append(lamp_dict_for_index)
+        except:
+            pass
 
         # Create a list of indexes.  The PDB banks will be mapped into this list.
         # The index of the bank is used to calculate the P-ROC driver number for
@@ -618,12 +625,12 @@ class PDBConfig(object):
     # to that.
     def get_proc_number(self, section, number_str):
         if section == 'PRCoils':
-            coil = Coil(self, number_str)
-            bank = coil.bank()
-            if bank == -1: return (-1)
-            index = self.indexes.index(coil.bank())
-            num = index * 8 + coil.output()
-            return num
+                coil = Coil(self, number_str)
+                bank = coil.bank()
+                if bank == -1: return (-1)
+                index = self.indexes.index(coil.bank())
+                num = index * 8 + coil.output()
+                return num
 
         if section == 'PRLamps':
             lamp = Lamp(self, number_str)
@@ -636,7 +643,6 @@ class PDBConfig(object):
             index = self.indexes.index(lamp_dict_for_index)
             num = index * 8 + lamp.sink_output()
             return num
-
         if section == 'PRSwitches':
             switch = Switch(self, number_str)
             num = switch.proc_num()

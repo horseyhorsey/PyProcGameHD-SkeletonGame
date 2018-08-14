@@ -260,7 +260,6 @@ class GameController(object):
                  ('PRCoils', self.coils, Driver),
                  ('PRLamps', self.lamps, Driver),
                  ('PRLEDs', self.leds, LED) ]
-
         new_virtual_drivers = []
         polarity = self.machine_type == pinproc.MachineTypeSternWhitestar or self.machine_type == pinproc.MachineTypeSternSAM or self.machine_type == pinproc.MachineTypePDB
         
@@ -274,70 +273,72 @@ class GameController(object):
         for section, collection, klass in pairs:
             if section in self.config:
                 sect_dict = self.config[section]
-                for name in sect_dict:
 
-                    # alternate way of creating machine.yaml with list instead but leave existing functionality
-                    if isinstance(sect_dict, list):
-                        item_dict = name
-                    else:
-                        item_dict = sect_dict[name]
-    
-                    # Find the P-ROC number for each item in the YAML sections.  For PDB's
-                    # the number is based on the PDB configuration determined above.  For
-                    # other machine types, pinproc's decode() method can provide the number.
-                    if self.machine_type == pinproc.MachineTypePDB:
-                        number = pdb_config.get_proc_number(section, str(item_dict['number']))
-                        if number == -1: 
-                            self.logger.error('%s Item: %s cannot be controlled by the P-ROC.  Ignoring...', section, name)
-                            continue
-                    else:
-                        number = pinproc.decode(self.machine_type, str(item_dict['number']))
+                if sect_dict != None:
+                    for name in sect_dict:
 
-                    item = None
-                    if ('bus' in item_dict and item_dict['bus'] == 'AuxPort') or number >= pinproc.DriverCount:
-                        item = VirtualDriver(self, name, number, polarity)
-                        new_virtual_drivers += [number]
-                    else:
-                        yaml_number = str(item_dict['number'])
-                        if klass==LED:
-                            number = yaml_number
+                        # alternate way of creating machine.yaml with list instead but leave existing functionality
+                        if isinstance(sect_dict, list):
+                            item_dict = name
+                        else:
+                            item_dict = sect_dict[name]
+
+                        # Find the P-ROC number for each item in the YAML sections.  For PDB's
+                        # the number is based on the PDB configuration determined above.  For
+                        # other machine types, pinproc's decode() method can provide the number.
+                        if self.machine_type == pinproc.MachineTypePDB:
+                            number = pdb_config.get_proc_number(section, str(item_dict['number']))
+                            if number == -1:
+                                self.logger.error('%s Item: %s cannot be controlled by the P-ROC.  Ignoring...', section, name)
+                                continue
+                        else:
+                            number = pinproc.decode(self.machine_type, str(item_dict['number']))
+
+                        item = None
+                        if ('bus' in item_dict and item_dict['bus'] == 'AuxPort') or number >= pinproc.DriverCount:
+                            item = VirtualDriver(self, name, number, polarity)
+                            new_virtual_drivers += [number]
+                        else:
+                            yaml_number = str(item_dict['number'])
+                            if klass==LED:
+                                number = yaml_number
+
+                            if isinstance(sect_dict, list):
+                                item = klass(self, name['name'], number)
+                            else:
+                                item = klass(self, name, number)
+
+                            item.yaml_number = yaml_number
+                            if 'label' in item_dict:
+                                item.label = item_dict['label']
+                            if 'type' in item_dict:
+                                item.type = item_dict['type']
+
+                            if 'tags' in item_dict:
+                                tags = item_dict['tags']
+                                if type(tags) == str:
+                                    item.tags = tags.split(',')
+                                elif type(tags) == list:
+                                    item.tags = tags
+                                else:
+                                    self.logger.warning('Configuration item named "%s" has unexpected tags type %s. Should be list or comma-delimited string.' % (name, type(tags)))
+
+                            if klass==Switch:
+                                if (('debounce' in item_dict and item_dict['debounce'] == False) or number >= pinproc.SwitchNeverDebounceFirst):
+                                    item.debounce = False
+                            if klass==Driver:
+                                if ('pulseTime' in item_dict):
+                                    item.default_pulse_time = item_dict['pulseTime']
+                                if ('polarity' in item_dict):
+                                    item.reconfigure(item_dict['polarity'])
+                            if klass==LED:
+                                if ('polarity' in item_dict):
+                                    item.invert = not item_dict['polarity']
 
                         if isinstance(sect_dict, list):
-                            item = klass(self, name['name'], number)
+                            collection.add(name['name'], item)
                         else:
-                            item = klass(self, name, number)
-
-                        item.yaml_number = yaml_number
-                        if 'label' in item_dict:
-                            item.label = item_dict['label']
-                        if 'type' in item_dict:
-                            item.type = item_dict['type']
-                        
-                        if 'tags' in item_dict:
-                            tags = item_dict['tags']
-                            if type(tags) == str:
-                                item.tags = tags.split(',')
-                            elif type(tags) == list:
-                                item.tags = tags
-                            else:
-                                self.logger.warning('Configuration item named "%s" has unexpected tags type %s. Should be list or comma-delimited string.' % (name, type(tags)))
-    
-                        if klass==Switch:
-                            if (('debounce' in item_dict and item_dict['debounce'] == False) or number >= pinproc.SwitchNeverDebounceFirst):
-                                item.debounce = False
-                        if klass==Driver:
-                            if ('pulseTime' in item_dict):
-                                item.default_pulse_time = item_dict['pulseTime']    
-                            if ('polarity' in item_dict):
-                                item.reconfigure(item_dict['polarity'])
-                        if klass==LED:
-                            if ('polarity' in item_dict):
-                                item.invert = not item_dict['polarity']
-
-                    if isinstance(sect_dict, list):
-                        collection.add(name['name'], item)
-                    else:
-                        collection.add(name, item)
+                            collection.add(name, item)
     
         # In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
         # So if any VirtualDrivers were added, the regular drivers in that group must be changed

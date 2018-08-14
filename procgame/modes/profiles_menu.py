@@ -67,7 +67,7 @@ class ProfileMenu(Mode):
         _width = self.game.dmd.width
         _height = self.game.dmd.height
 
-        self.bg_layer = self.game.animations['chrome']
+        self.bg_layer = self.game.animations['missing']
         self._title_layer = self.generate_text_layer(_width/2, 2, 'med')
 
         self._menu_top_layer = self.generate_text_layer(_width/2, _height / 3)

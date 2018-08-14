@@ -1,0 +1,117 @@
+PRGame:
+  machineType: pdb
+  numBalls: 4
+PRBumpers:
+- slingl
+- slingr
+PRFlippers:
+- flipperLwR
+- flipperLwL
+PRSwitches:
+- name: coin1
+  number: SD00
+  tags: ''
+- name: coin2
+  number: SD01
+  tags: ''
+- name: flipperLwR
+  number: SD11
+  tags: ''
+- name: flipperUpL
+  number: SD13
+  tags: ''
+- name: coin3
+  number: SD02
+  tags: ''
+- name: coin4
+  number: SD03
+  tags: ''
+- name: exit
+  number: SD04
+  tags: ''
+- name: down
+  number: SD05
+  tags: ''
+- name: up
+  number: SD06
+  tags: ''
+- name: enter
+  number: SD07
+  tags: ''
+- name: flipperLwL
+  number: SD09
+  tags: ''
+- name: slingl
+  number: 0/0
+  tags: ''
+- name: slingr
+  number: 0/1
+  tags: ''
+- name: startButton
+  number: 0/2
+  tags: ''
+- name: trough1
+  number: 0/3
+  tags: ''
+- name: trough2
+  number: 0/4
+  tags: ''
+- name: trough3
+  number: 0/5
+  tags: ''
+- name: trough4
+  number: 0/6
+  tags: ''
+- name: shooter
+  number: 0/7
+  tags: shooter
+PRLamps: []
+PRCoils:
+- solenoid_type: None
+  name: flipperLwRMain
+  number: A0-B0-0
+  tags: ''
+- solenoid_type: None
+  name: flipperLwRHold
+  number: A0-B0-1
+  tags: ''
+- solenoid_type: None
+  name: flipperLwLMain
+  number: A0-B0-2
+  tags: ''
+- solenoid_type: None
+  name: flipperLwLHold
+  number: A0-B0-3
+  tags: ''
+- solenoid_type: None
+  name: trough
+  number: A0-B0-4
+  tags: ''
+- solenoid_type: None
+  name: slingl
+  number: A0-B0-5
+  tags: ''
+- solenoid_type: None
+  name: slingr
+  number: A0-B0-6
+  tags: ''
+PRLEDs: # VP tags for Visual Pinball Lamp number
+- name: ShootAgain
+  number: A2-R0-G1-B2
+  tags: vp, 11
+- name: Mode2
+  number: A2-R3-G4-B5
+  tags: vp, 12
+- name: Mode3
+  number: A2-R6-G7-B8
+  tags: vp, 13
+- name: Mode4
+  number: A2-R9-G10-B11
+  tags: vp, 14
+- name: Mode5
+  number: A2-R12-G13-B14
+  tags: vp, 15
+PRDriverGlobals:
+  lamp_matrix_strobe_time: 200
+  watchdog_time: 1000
+  use_watchdog: true
